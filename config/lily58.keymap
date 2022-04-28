@@ -10,6 +10,10 @@
 #include <dt-bindings/zmk/ext_power.h>
 
 / {
+	chosen {
+        zmk,underglow = &led_strip;
+    };
+
 	keymap {
 		compatible = "zmk,keymap";
 
