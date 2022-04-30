@@ -5,7 +5,7 @@ manifest:
   projects:
     - name: zmk
       remote: infused-kim
-      revision: v2.5.0+zmk-fixes+kim-fixes
+      revision: my-changes/ext-pwr-usb-only
       import: app/west.yml
   self:
     path: config
