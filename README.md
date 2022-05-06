@@ -1,5 +1,8 @@
 # ZMK Config
 
+> Building locally
+> west build -b nice_nano_v2 -- -DSHIELD=lily58_left -DZMK_CONFIG="C:/Users/myUser/Documents/Github/zmk-config/config"
+
 https://zmk.dev/docs/features/encoders
 
 https://zmk.dev/docs/features/keymaps/#root-devicetree-node
