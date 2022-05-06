@@ -1,7 +1,10 @@
 # ZMK Config
 
-> Building locally
-> west build -b nice_nano_v2 -- -DSHIELD=lily58_left -DZMK_CONFIG="C:/Users/myUser/Documents/Github/zmk-config/config"
+## Local Build Commands
+```bash
+west build -d build/left -b nice_nano_v2 -- -DSHIELD=lily58_left
+west build -d build/right -b nice_nano_v2 -- -DSHIELD=lily58_right
+```
 
 https://zmk.dev/docs/features/encoders
 
