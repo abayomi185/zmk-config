@@ -2,6 +2,12 @@ on: [push, pull_request, workflow_dispatch]
 
 name: Build
 
+env:
+  build_matrix_path: "build.yaml" # Path to the build matrix file
+  config_path: "config" # Path to the config directory
+  fallback_binary: "bin" # Fallback binary format, if no *.uf2 file was built
+  archive_name: "firmware" # Archive output file name
+
 jobs:
   matrix:
     runs-on: ubuntu-latest
@@ -17,8 +23,8 @@ jobs:
 
       - name: Fetch Build Matrix
         run: |
-          echo "build_matrix=$(yaml2json '${{ inputs.build_matrix_path }}' | jq -c .)" >> $GITHUB_ENV
-          yaml2json "${{ inputs.build_matrix_path }}" | jq
+          echo "build_matrix=$(yaml2json '${{ env.build_matrix_path }}' | jq -c .)" >> $GITHUB_ENV
+          yaml2json "${{ env.build_matrix_path }}" | jq
 
   build:
     runs-on: ubuntu-latest
@@ -26,6 +32,8 @@ jobs:
       image: zmkfirmware/zmk-build-arm:stable
     needs: matrix
     name: Build
+    env:
+      BUILD_MATRIX_PATH: "build.yaml"
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.build_matrix) }}
@@ -64,7 +72,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: West Init
-        run: west init -l "${{ inputs.config_path }}"
+        run: west init -l "${{ env.config_path }}"
 
       - name: West Update
         run: west update
@@ -74,7 +82,7 @@ jobs:
 
       - name: West Build (${{ env.display_name }})
         shell: sh -x {0}
-        run: west build -s zmk/app -b "${{ matrix.board }}" -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/${{ inputs.config_path }}" ${{ env.extra_cmake_args }} ${{ matrix.cmake-args }}
+        run: west build -s zmk/app -b "${{ matrix.board }}" -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/${{ env.config_path }}" ${{ env.extra_cmake_args }} ${{ matrix.cmake-args }}
 
       - name: ${{ env.display_name }} Kconfig file
         run: |
@@ -106,13 +114,13 @@ jobs:
           if [ -f build/zephyr/zmk.uf2 ]
           then
             cp build/zephyr/zmk.uf2 "build/artifacts/${{ env.artifact_name }}.uf2"
-          elif [ -f build/zephyr/zmk.${{ inputs.fallback_binary }} ]
+          elif [ -f build/zephyr/zmk.${{ env.fallback_binary }} ]
           then
-            cp "build/zephyr/zmk.${{ inputs.fallback_binary }}" "build/artifacts/${{ env.artifact_name }}.${{ inputs.fallback_binary }}"
+            cp "build/zephyr/zmk.${{ env.fallback_binary }}" "build/artifacts/${{ env.artifact_name }}.${{ env.fallback_binary }}"
           fi
 
       - name: Archive (${{ env.display_name }})
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ inputs.archive_name }}
+          name: ${{ env.archive_name }}
           path: build/artifacts
