@@ -8,6 +8,13 @@ env:
   fallback_binary: "bin" # Fallback binary format, if no *.uf2 file was built
   archive_name: "firmware" # Archive output file name
 
+# Default action from ZMK
+# ###################
+# jobs:
+#   build:
+#     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+# ###################
+
 jobs:
   matrix:
     runs-on: ubuntu-latest
