@@ -7,18 +7,19 @@ jobs:
     runs-on: ubuntu-latest
     name: Fetch Build Keyboards
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      build_matrix: ${{ env.build_matrix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
       - name: Install yaml2json
         run: python3 -m pip install remarshal
-      - id: set-matrix
-        name: Fetch Build Matrix
+
+      - name: Fetch Build Matrix
         run: |
-          matrix=$(yaml2json build.yaml | jq -c .)
-          yaml2json build.yaml
-          echo "::set-output name=matrix::${matrix}"
+          echo "build_matrix=$(yaml2json '${{ inputs.build_matrix_path }}' | jq -c .)" >> $GITHUB_ENV
+          yaml2json "${{ inputs.build_matrix_path }}" | jq
+
   build:
     runs-on: ubuntu-latest
     container:
@@ -27,29 +28,28 @@ jobs:
     name: Build
     strategy:
       fail-fast: false
-      matrix: ${{fromJson(needs.matrix.outputs.matrix)}}
+      matrix: ${{ fromJson(needs.matrix.outputs.build_matrix) }}
     steps:
       - name: Prepare variables
-        id: variables
-        run: |
-          if [ -n "${{ matrix.shield }}" ]; then
-            EXTRA_CMAKE_ARGS="-DSHIELD=${{ matrix.shield }}"
-            ARTIFACT_NAME="${{ matrix.shield }}-${{ matrix.board }}-zmk"
-            DISPLAY_NAME="${{ matrix.shield }} - ${{ matrix.board }}"
-          else
-            EXTRA_CMAKE_ARGS=
-            DISPLAY_NAME="${{ matrix.board }}"
-            ARTIFACT_NAME="${{ matrix.board }}-zmk"
-          fi
-          echo ::set-output name=extra-cmake-args::${EXTRA_CMAKE_ARGS}
-          echo ::set-output name=artifact-name::${ARTIFACT_NAME}
-          echo ::set-output name=display-name::${DISPLAY_NAME}
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Cache west modules
-        uses: actions/cache@v2
+        shell: sh -x {0}
         env:
-          cache-name: cache-zephyr-modules
+          board: ${{ matrix.board }}
+          shield: ${{ matrix.shield }}
+          artifact_name: ${{ matrix.artifact-name }}
+        run: |
+          echo "zephyr_version=${ZEPHYR_VERSION}" >> $GITHUB_ENV
+          echo "extra_cmake_args=${shield:+-DSHIELD=\"$shield\"}" >> $GITHUB_ENV
+          echo "display_name=${shield:+$shield - }${board}" >> $GITHUB_ENV
+          echo "artifact_name=${artifact_name:-${shield:+$shield-}${board}-zmk}" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache west modules
+        uses: actions/cache@v3.0.11
+        continue-on-error: true
+        env:
+          cache_name: cache-zephyr-${{ env.zephyr_version }}-modules
         with:
           path: |
             modules/
@@ -57,34 +57,62 @@ jobs:
             zephyr/
             bootloader/
             zmk/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('manifest-dir/west.yml') }}
+          key: ${{ runner.os }}-build-${{ env.cache_name }}-${{ hashFiles('**/west.yml', '**/build.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-${{ env.cache_name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+
       - name: West Init
-        run: west init -l config
+        run: west init -l "${{ inputs.config_path }}"
+
       - name: West Update
         run: west update
+
       - name: West Zephyr export
         run: west zephyr-export
-      - name: West Build (${{ steps.variables.outputs.display-name }})
+
+      - name: West Build (${{ env.display_name }})
+        shell: sh -x {0}
+        run: west build -s zmk/app -b "${{ matrix.board }}" -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/${{ inputs.config_path }}" ${{ env.extra_cmake_args }} ${{ matrix.cmake-args }}
+
+      - name: ${{ env.display_name }} Kconfig file
         run: |
-          west build -s zmk/app -b ${{ matrix.board }} -- -DZMK_CONFIG=${GITHUB_WORKSPACE}/config ${{ steps.variables.outputs.extra-cmake-args }} ${{ matrix.cmake-args }}
-      - name: ${{ steps.variables.outputs.display-name }} Kconfig file
-        run: cat build/zephyr/.config | grep -v "^#" | grep -v "^$"
+          if [ -f build/zephyr/.config ]
+          then
+            grep -v -e "^#" -e "^$" build/zephyr/.config | sort
+          else
+            echo "No Kconfig output"
+          fi
+        if: ${{ !cancelled() }}
+
+      - name: ${{ env.display_name }} Devicetree file
+        run: |
+          if [ -f build/zephyr/zephyr.dts ]
+          then
+            cat build/zephyr/zephyr.dts
+          elif [ -f build/zephyr/zephyr.dts.pre ]
+          then
+            cat -s build/zephyr/zephyr.dts.pre
+          else
+            echo "No Devicetree output"
+          fi
+        if: ${{ !cancelled() }}
+
       - name: Rename artifacts
+        shell: sh -x {0}
         run: |
           mkdir build/artifacts
           if [ -f build/zephyr/zmk.uf2 ]
           then
-            cp build/zephyr/zmk.uf2 "build/artifacts/${{ steps.variables.outputs.artifact-name }}.uf2"
-          elif [ -f build/zephyr/zmk.hex ]
+            cp build/zephyr/zmk.uf2 "build/artifacts/${{ env.artifact_name }}.uf2"
+          elif [ -f build/zephyr/zmk.${{ inputs.fallback_binary }} ]
           then
-            cp build/zephyr/zmk.hex "build/artifacts/${{ steps.variables.outputs.artifact-name }}.hex"
+            cp "build/zephyr/zmk.${{ inputs.fallback_binary }}" "build/artifacts/${{ env.artifact_name }}.${{ inputs.fallback_binary }}"
           fi
-      - name: Archive (${{ steps.variables.outputs.display-name }})
-        uses: actions/upload-artifact@v2
+
+      - name: Archive (${{ env.display_name }})
+        uses: actions/upload-artifact@v3
         with:
-          name: firmware
+          name: ${{ inputs.archive_name }}
           path: build/artifacts
