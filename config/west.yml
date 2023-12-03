@@ -1,11 +1,11 @@
 manifest:
   remotes:
-    - name: infused-kim
-      url-base: https://github.com/infused-kim
+    - name: zmkfirmware
+      url-base: https://github.com/zmkfirmware
   projects:
     - name: zmk
-      remote: infused-kim
-      revision: my-changes/split-encoder
+      remote: zmkfirmware
+      revision: main
       import: app/west.yml
   self:
     path: config

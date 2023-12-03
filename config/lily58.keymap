@@ -8,17 +8,16 @@
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/ext_power.h>
-#include <dt-bindings/zmk/rgb.h>
 #include <dt-bindings/zmk/outputs.h>
 
-// &left_encoder { resolution = <1>; };
-// &right_encoder { resolution = <1>; };
-
 / {
-	chosen {
-        zmk,underglow = &led_strip;
-    };
-
+	&sk {
+    	release-after-ms = <2000>;
+    	quick-release;
+    	/delete-property/ ignore-modifiers;
+	
+	};
+	
 	keymap {
 		compatible = "zmk,keymap";
 
@@ -36,8 +35,6 @@
 &kp LSHFT &kp Z  &kp X  &kp C    &kp V    &kp B  	&kp CAPS   &kp C_PP &kp N  	&kp M    &kp COMMA &kp DOT &kp FSLH &kp RSHFT
                         &kp LALT &kp LGUI &mo 1	    &kp SPACE  &kp RET	&mo 2 	&kp BSPC &kp CAPS
 			>;
-
-			sensor-bindings = <&inc_dec_kp C_VOL_DN C_VOL_UP>;
 		};
 
 		lower_layer {
@@ -48,14 +45,12 @@
 // |       |     |     |      |      |      |        |  |       |      |  _    |  +    |  {   |   }   |  "|"  |
 //                     |      |      |      |        |  |       |      |       |       |
 			bindings = <
-&bt BT_CLR       &bt BT_SEL 0     &bt BT_SEL 1     &bt BT_SEL 2     &bt BT_SEL 3       &out OUT_TOG                          &trans    &trans    &trans          &trans    &trans    &trans
+&bt BT_SEL 0     &bt BT_SEL 1     &bt BT_SEL 2     &bt BT_SEL 3     &bt BT_SEL 4       &out OUT_TOG                          &trans    &trans    &trans          &trans    &trans    &trans
 &kp F1           &kp F2           &kp F3           &kp F4           &kp F5             &kp F6                                &kp F7    &kp F8    &kp F9          &kp F10   &kp F11   &kp F12
 &kp GRAVE        &kp EXCL         &kp AT           &kp HASH         &kp DOLLAR         &kp PRCNT                             &kp CARET &kp AMPS  &kp KP_MULTIPLY &kp LPAR  &kp RPAR  &kp TILDE
-&rgb_ug RGB_HUD  &rgb_ug RGB_HUI  &rgb_ug RGB_BRD  &rgb_ug RGB_BRI  &rgb_ug RGB_EFF	   &ext_power EP_TOG 	&trans &trans    &trans    &kp MINUS &kp KP_PLUS     &kp LBRC  &kp RBRC  &kp PIPE
-                                  &rgb_ug RGB_SAD  &rgb_ug RGB_SAI  &trans             &trans    			&trans &trans    &trans    &trans
+&trans 					 &bt BT_CLR  			&trans  				 &trans  					&trans	   				 &ext_power EP_OFF 	&trans &trans    	 &trans    &kp MINUS &kp KP_PLUS     &kp LBRC  &kp RBRC  &kp PIPE
+                                  &trans  				 &trans  					&trans             &trans    					&trans &trans    	 &trans    &trans
 			>;
-
-			sensor-bindings = <&inc_dec_kp C_VOL_DN C_VOL_UP>;
 		};
 
 		raise_layer {
@@ -72,8 +67,6 @@
 &kp F7    &kp F8 &kp F9 &kp F10 &kp F11 &kp F12   &trans   &trans    &kp MINUS   &kp KP_PLUS  &kp EQUAL &kp LBKT &kp RBKT  &kp BSLH
                         &trans  &trans  &trans    &trans   &trans    &trans      &trans    	  &trans
 			>;
-
-			sensor-bindings = <&inc_dec_kp C_VOL_DN C_VOL_UP>;
 		};
 	};
 };
