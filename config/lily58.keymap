@@ -35,7 +35,7 @@
                         &kp LALT &kp LGUI &mo 1	  &kp SPACE  &kp RET	&mo 2 	&kp BSPC &kp CAPS
 			>;
 
-			sensor-bindings = <&inc_dec_kp trans trans &inc_dec_kp C_VOL_UP C_VOL_DN>;
+			// sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
 		};
 
 		lower_layer {
