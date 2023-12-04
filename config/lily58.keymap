@@ -17,6 +17,14 @@
 };
 
 / {
+	right_encoder: right_encoder {
+    	compatible = "alps,ec11";
+    	label = "RIGHT_ENCODER";
+    	a-gpios = <&pro_micro 21 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+    	b-gpios = <&pro_micro 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+    	steps = <80>;
+  };
+
 	keymap {
 		compatible = "zmk,keymap";
 
@@ -35,7 +43,7 @@
                         &kp LALT &kp LGUI &mo 1	  &kp SPACE  &kp RET	&mo 2 	&kp BSPC &kp CAPS
 			>;
 
-			// sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
+			sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
 		};
 
 		lower_layer {
@@ -53,7 +61,7 @@
                                 &rgb_ug RGB_SAD &rgb_ug RGB_SAI &trans          &trans    				&trans 		 &trans &trans    &trans
 			>;
 
-			// sensor-bindings = <&inc_dec_kp trans trans &inc_dec_kp C_VOL_UP C_VOL_DN>;
+			sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
 		};
 
 		raise_layer {
@@ -71,7 +79,7 @@
                         &trans  &trans  &trans  &trans &trans &trans    &trans    	&trans
 			>;
 
-			// sensor-bindings = <&inc_dec_kp trans trans &inc_dec_kp PG_UP PG_DN>;
+			sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
 		};
 	};
 };
