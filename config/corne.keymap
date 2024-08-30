@@ -13,6 +13,10 @@
     hold-time-ms = <1000>; // Only turn off it the key is held for 5 seconds or longer.
 };
 
+&mt {
+    tapping-term-ms = <75>;
+};
+
 / {
         behaviors {
             td0: tap_dance_0 { // TPD0
