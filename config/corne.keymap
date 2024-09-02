@@ -10,7 +10,7 @@
 #include <dt-bindings/zmk/outputs.h>
 
 &soft_off {
-    hold-time-ms = <1000>; // Only turn off it the key is held for 5 seconds or longer.
+    hold-time-ms = <1000>; // Only turn off it the key is held for 1 second or longer.
 };
 
 &mt {
@@ -19,11 +19,18 @@
 
 / {
         behaviors {
-            td0: tap_dance_0 { // TPD0
+            td0: tap_dance_0 {
                 compatible = "zmk,behavior-tap-dance";
                 #binding-cells = <0>;
                 tapping-term-ms = <200>;
                 bindings = <&kp LGUI>, <&kp LALT>;
+            };
+
+            bkspdel: backspace_delete {
+                compatible = "zmk,behavior-mod-morph";
+                #binding-cells = <0>;
+                bindings = <&kp BKSP>, <&kp DEL>;
+                mods = <(MOD_LSFT|MOD_RSFT)>;
             };
         };
 
@@ -40,7 +47,7 @@
    &mt ESC TAB  &kp Q  &kp W  &kp E    &kp R  &kp T           &kp Y   &kp U  &kp I     &kp O   &kp P    &kp F22
    &kp LCTRL    &kp A  &kp S  &kp D    &kp F  &kp G           &kp H   &kp J  &kp K     &kp L   &kp SEMI &kp SQT
    &kp LSHFT    &kp Z  &kp X  &kp C    &kp V  &kp B           &kp N   &kp M  &kp COMMA &kp DOT &kp FSLH &kp RSHIFT
-                              &td0     &mo 1  &kp SPACE       &kp RET &mo 2  &kp BSPC
+                              &td0     &mo 1  &kp SPACE       &kp RET &mo 2  &bkspdel
                     >;
                 };
                 lower_layer {
