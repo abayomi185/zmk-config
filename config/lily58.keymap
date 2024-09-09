@@ -40,11 +40,11 @@
 
 		default_layer {
 // ------------------------------------------------------------------------------------------------------------
-// |  ESC  |  1  |  2  |  3   |  4     |  5   |                   |  6   |  7     |  8    |  9   |   0   |  F24  |
-// |  TAB  |  Q  |  W  |  E   |  R     |  T   |                   |  Y   |  U     |  I    |  O   |   P   |   -   |
-// |  CTRL |  A  |  S  |  D   |  F     |  G   |                   |  H   |  J     |  K    |  L   |   ;   |   '   |
-// | SHIFT |  Z  |  X  |  C   |  V     |  B   |   CAPS  |  |PL/PA |  N   |  M     |  ,    |  .   |   /   | SHIFT |
-//                     | ALT  |  GUI   | LOWER  | SPACE |  |ENTER | BSPC |  RAISE | GUI   |
+// |  ESC  |  1  |  2  |  3   |  4     |  5   |                 |  6   |  7     |  8    |  9   |   0   |  F24  |
+// |  TAB  |  Q  |  W  |  E   |  R     |  T   |                 |  Y   |  U     |  I    |  O   |   P   |   -   |
+// |  CTRL |  A  |  S  |  D   |  F     |  G   |                 |  H   |  J     |  K    |  L   |   ;   |   '   |
+// | SHIFT |  Z  |  X  |  C   |  V     |  B   | CAPS  |  |PL/PA |  N   |  M     |  ,    |  .   |   /   | SHIFT |
+//                     | ALT  |  GUI   |LOWER | SPACE |  |ENTER | BSPC |  RAISE | GUI   |
 			bindings = <
 &kp ESC   &kp N1 &kp N2 &kp N3   &kp N4    &kp N5                    &kp N6 &kp N7   &kp N8    &kp N9  &kp N0   &kp F24
 &kp TAB   &kp Q  &kp W  &kp E    &kp R     &kp T                     &kp Y  &kp U    &kp I     &kp O   &kp P    &kp MINUS
@@ -59,14 +59,14 @@
 // |  BT0  | BT1 | BT2 | BT3  | BT4  | BT5  |                   |      |       |       |      |       |       |
 // |       |  1  |  2  |  3   |  4   |  5   |                   |  6   |   7   |   8   |  9   |   0   |  F22  |
 // |   `   |  !  |  @  |  #   |  $   |  %   |                   |  ^   |   &   |   *   |  (   |   )   |   ~   |
-// |  TOG  |     |BTCLR|      |      |      |        |  |       |  _   |       |       |  {   |   }   |  "|"  |
+// |  TOG  |     |     |      |      |      | BTCLR  |  |       |  _   |       |       |  {   |   }   |  "|"  |
 //                     |      |      |      |SOFTOFF |  |       |      |       | PSCRN |
 			bindings = <
-&bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4 &bt BT_SEL 5                       &trans    &trans      &trans          &trans    &trans    &kp F22
-&trans    	 &kp N1       &kp N2       &kp N3       &kp N4       &kp N5                             &kp N6    &kp N7      &kp N8          &kp N9    &kp N0    &trans
-&kp GRAVE    &kp EXCL     &kp AT       &kp HASH     &kp DOLLAR   &kp PRCNT                          &kp CARET &kp AMPS    &kp KP_MULTIPLY &kp LPAR  &kp RPAR  &kp TILDE
-&out OUT_TOG &trans       &bt BT_CLR   &trans       &trans       &trans	   	     &trans    &trans   &kp UNDER &trans      &trans          &kp LBRC  &kp RBRC  &kp PIPE
-                                       &trans  		&trans 	     &trans       	 &soft_off &trans 	&trans    &trans      &kp PSCRN
+&bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4 &bt BT_SEL 5                      &trans    &trans      &trans          &trans    &trans    &kp F22
+&trans    	 &kp N1       &kp N2       &kp N3       &kp N4       &kp N5                            &kp N6    &kp N7      &kp N8          &kp N9    &kp N0    &trans
+&kp GRAVE    &kp EXCL     &kp AT       &kp HASH     &kp DOLLAR   &kp PRCNT                         &kp CARET &kp AMPS    &kp KP_MULTIPLY &kp LPAR  &kp RPAR  &kp TILDE
+&out OUT_TOG &trans       &trans       &trans       &trans       &trans	   	   &bt BT_CLR &trans   &kp UNDER &trans      &trans          &kp LBRC  &kp RBRC  &kp PIPE
+                                       &trans  		&trans 	     &trans        &soft_off  &trans   &trans    &trans      &kp PSCRN
 			>;
 		};
 
