@@ -72,8 +72,8 @@
 &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4 &bt BT_SEL 5                      &trans    &trans      &trans          &trans    &trans    &kp F22
 &trans    	 &kp N1       &kp N2       &kp N3       &kp N4       &kp N5                            &kp N6    &kp N7      &kp N8          &kp N9    &kp N0    &trans
 &kp GRAVE    &kp EXCL     &kp AT       &kp HASH     &kp DOLLAR   &kp PRCNT                         &kp CARET &kp AMPS    &kp KP_MULTIPLY &kp LPAR  &kp RPAR  &kp TILDE
-&out OUT_TOG &trans       &trans       &trans       &trans       &trans	   	   &bt BT_CLR &trans   &kp UNDER &trans      &trans          &kp LBRC  &kp RBRC  &kp PIPE
-                                       &trans  		&trans 	     &trans        &soft_off  &trans   &trans    &trans      &kp PSCRN
+&out OUT_TOG &trans       &trans       &trans       &trans       &trans	   	   &trans      &trans  &kp UNDER &trans      &trans          &kp LBRC  &kp RBRC  &kp PIPE
+                                       &trans  		  &soft_off    &trans        &bt BT_CLR  &trans  &trans    &trans      &kp PSCRN
 			>;
 		};
 
