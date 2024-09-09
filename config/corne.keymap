@@ -26,6 +26,13 @@
                 bindings = <&kp LGUI>, <&kp LALT>;
             };
 
+            layrswtch: tap_dance_1 {
+                compatible = "zmk,behavior-tap-dance";
+                #binding-cells = <0>;
+                tapping-term-ms = <200>;
+                bindings = <&mo 1>, <&mo 2>;
+            };
+
             bkspdel: backspace_delete {
                 compatible = "zmk,behavior-mod-morph";
                 #binding-cells = <0>;
@@ -44,23 +51,23 @@
 // | SHFT    |  Z  |  X  |  C  |  V  |  B  |   |  N  |  M   |   ,   |  .  |  /  | SHFT |
 //                       |TPD0 |LOWER| SPC |   | ENT |RAISE | BSPC  |
                     bindings = <
-   &mt ESC TAB  &kp Q  &kp W  &kp E     &kp R  &kp T           &kp Y   &kp U  &kp I     &kp O   &kp P    &kp F22
-   &kp LCTRL    &kp A  &kp S  &kp D     &kp F  &kp G           &kp H   &kp J  &kp K     &kp L   &kp SEMI &kp SQT
-   &kp LSHFT    &kp Z  &kp X  &kp C     &kp V  &kp B           &kp N   &kp M  &kp COMMA &kp DOT &kp FSLH &kp RSHIFT
-                              &lguilalt &mo 1  &kp SPACE       &kp RET &mo 2  &kp BSPC
+   &mt ESC TAB  &kp Q  &kp W  &kp E     &kp R       &kp T           &kp Y   &kp U  &kp I     &kp O   &kp P    &kp F22
+   &kp LCTRL    &kp A  &kp S  &kp D     &kp F       &kp G           &kp H   &kp J  &kp K     &kp L   &kp SEMI &kp SQT
+   &kp LSHFT    &kp Z  &kp X  &kp C     &kp V       &kp B           &kp N   &kp M  &kp COMMA &kp DOT &kp FSLH &kp RSHIFT
+                              &lguilalt &layrswtch  &kp SPACE       &kp RET &mo 2  &kp BSPC
                     >;
                 };
                 lower_layer {
 // -----------------------------------------------------------------------------------------
 // |     |  1  |  2  |  3  |  4  |  5  |   |  6  |  7  |  8  |  9  |  0  | F24 |
 // |  `  |  !  |  @  |  #  |  $  |  %  |   |  ^  |  &  |  *  |  (  |  )  |  ~  |
-// | TOG |     |BTCLR|     |BT_PV|BT_NT|   |  _  |     |     |  {  |  }  | "|" |
-//                   |     |     |STOFF|   |     |     | DEL |
+// | TOG |     |     |     |BT_PV|BT_NT|   |  _  |     |     |  {  |  }  | "|" |
+//                   |STOFF|     |BTCLR|   |     |     | DEL |
                     bindings = <
    &trans       &kp N1     &kp N2     &kp N3       &kp N4       &kp N5              &kp N6      &kp N7    &kp N8    &kp N9    &kp N0   &kp F24
    &kp GRAVE    &kp EXCL   &kp AT     &kp HASH     &kp DLLR     &kp PRCNT           &kp CARET   &kp AMPS  &kp ASTRK &kp LPAR  &kp RPAR &kp TILDE
-   &out OUT_TOG &trans     &bt BT_CLR &trans       &bt BT_PRV   &bt BT_NXT          &kp UNDER   &kp PSCRN &trans    &kp LBRC  &kp RBRC &kp PIPE
-                                      &trans       &trans       &soft_off           &trans      &trans    &kp DEL
+   &out OUT_TOG &trans     &trans     &trans       &bt BT_PRV   &bt BT_NXT          &kp UNDER   &kp PSCRN &trans    &kp LBRC  &kp RBRC &kp PIPE
+                                      &soft_off    &trans       &bt BT_CLR           &trans      &trans    &kp DEL
                     >;
                 };
 
