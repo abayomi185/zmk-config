@@ -1,4 +1,4 @@
-# ZMK Configa
+# ZMK Config
 
 ## Local Build Commands
 ```bash
