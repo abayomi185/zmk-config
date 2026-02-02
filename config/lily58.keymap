@@ -33,7 +33,7 @@
 &kp TAB     &kp Q   &kp W   &kp E      &kp R     &kp T                                 &kp Y     &kp U     &kp I      &kp O    &kp P          &kp BACKSLASH
 &kp ESCAPE  &kp A   &kp S   &kp D      &kp F     &kp G                                 &kp H     &kp J     &kp K      &kp L    &kp SEMICOLON  &kp ENTER
 &kp LCTRL   &kp Z   &kp X   &kp C      &kp V     &kp B     &to 1        &kp C_PP       &kp N     &kp M     &kp COMMA  &kp DOT  &kp FSLH       &kp RSHFT
-                            &kp LCTRL  &kp LALT  &kp LGUI  &kp SPACE    &kp BACKSPACE  &kp RGUI  &kp RGUI  &kp RGUI
+                            &kp LCTRL  &kp LALT  &kp LGUI  &kp SPACE    &kp BACKSPACE  &kp RGUI  &kp RGUI  &kp RCTRL
             >;
 
             // sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp C_VOL_UP C_VOL_DN>;
