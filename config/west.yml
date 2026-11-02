@@ -2,10 +2,35 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
+    - name: abayomi185
+      url-base: https://github.com/abayomi185
   projects:
     - name: zmk
-      remote: zmkfirmware
-      revision: 4dd95d7840eb3d5a3f59bb29fbf1ab054715ef85 # main, 2026-10-09 (Zephyr 4.1, pre v0.4)
+      remote: abayomi185
+      revision: ae878f04b683996d15a6dee08cb0fc5fa9a0dc60 # corne-display-fix: main 4dd95d7 + zmkfirmware/zmk#3236
       import: app/west.yml
+    - name: zephyr
+      remote: zmkfirmware
+      revision: 10ba6d0cb38bc3d258775d27982f707599320085 # v4.1.0+zmk-fixes, as pinned by ZMK
+      import:
+        name-blocklist:
+          - ci-tools
+          - hal_altera
+          - hal_cypress
+          - hal_infineon
+          - hal_microchip
+          - hal_nxp
+          - hal_openisa
+          - hal_silabs
+          - hal_xtensa
+          - hal_st
+          - hal_ti
+          - loramac-node
+          - mcuboot
+          - mcumgr
+          - net-tools
+          - openthread
+          - edtt
+          - trusted-firmware-m
   self:
     path: config
