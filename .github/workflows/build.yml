@@ -1,6 +1,19 @@
 name: Build ZMK firmware
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      keyboard:
+        description: Keyboard to build
+        type: choice
+        default: corne
+        options:
+          - corne
+          - lily58
+          - lily58-slim
+          - all
 
 jobs:
   build:
@@ -15,14 +28,25 @@ jobs:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock', 'config/west.yml') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-
 
-      - run: nix build -L .#firmware .#settings-reset --out-link result
-
-      - name: Collect firmware
+      - name: Build firmware
+        env:
+          # Pushes and pull requests build every keyboard, so a break in one is caught.
+          KEYBOARD: ${{ inputs.keyboard || 'all' }}
         run: |
+          keyboards=$KEYBOARD
+          if [ "$KEYBOARD" = all ]; then
+            keyboards="corne lily58 lily58-slim"
+          fi
+
           mkdir firmware
-          cp -L result/zmk_left.uf2 firmware/corne_left.uf2
-          cp -L result/zmk_right.uf2 firmware/corne_right.uf2
-          cp -L result-1/zmk.uf2 firmware/settings_reset.uf2
+          for keyboard in $keyboards; do
+            nix build -L ".#$keyboard" --out-link "result-$keyboard"
+            cp -L "result-$keyboard/zmk_left.uf2" "firmware/${keyboard}_left.uf2"
+            cp -L "result-$keyboard/zmk_right.uf2" "firmware/${keyboard}_right.uf2"
+          done
+
+          nix build -L .#settings-reset --out-link result-settings-reset
+          cp -L result-settings-reset/zmk.uf2 firmware/settings_reset.uf2
 
       - uses: actions/upload-artifact@v7
         with:
