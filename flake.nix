@@ -36,17 +36,18 @@
 
       # Lily58 and Lily58 Slim share a shield name, so each keyboard's
       # files are copied into the ZMK config directory at build time.
-      splitKeyboard = name: shield: args: buildSplitKeyboard (common // {
+      splitKeyboard = name: shield: buildSplitKeyboard (common // {
         inherit name;
         shield = "${shield}_%PART%";
         preConfigure = "cp keyboards/${name}/* config/";
-      } // args);
+        enableZmkStudio = true;
+      });
     in rec {
       default = corne;
 
-      corne = splitKeyboard "corne" "corne" { enableZmkStudio = true; };
-      lily58 = splitKeyboard "lily58" "lily58" { };
-      lily58-slim = splitKeyboard "lily58-slim" "lily58" { };
+      corne = splitKeyboard "corne" "corne";
+      lily58 = splitKeyboard "lily58" "lily58";
+      lily58-slim = splitKeyboard "lily58-slim" "lily58";
 
       settings-reset = buildKeyboard (common // {
         name = "settings-reset";
