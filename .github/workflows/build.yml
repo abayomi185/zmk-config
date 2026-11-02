@@ -10,6 +10,11 @@ jobs:
 
       - uses: cachix/install-nix-action@v31
 
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock', 'config/west.yml') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+
       - run: nix build -L .#firmware .#settings-reset --out-link result
 
       - name: Collect firmware
