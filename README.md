@@ -3,7 +3,7 @@
 ## Local Build Commands
 
 ```bash
-west build -d build/left -b nice_nano//zmk -- -DSHIELD=corne_left
+west build -d build/left -b nice_nano//zmk -S studio-rpc-usb-uart -- -DSHIELD=corne_left -DCONFIG_ZMK_STUDIO=y
 west build -d build/right -b nice_nano//zmk -- -DSHIELD=corne_right
 ```
 
