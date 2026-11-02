@@ -3,8 +3,17 @@
 ## Local Build Commands
 
 ```bash
-west build -d build/left -b nice_nano_v2 -- -DSHIELD=corne_left
-west build -d build/right -b nice_nano_v2 -- -DSHIELD=corne_right
+nix build .#firmware --out-link result        # result/zmk_left.uf2, result/zmk_right.uf2
+nix build .#settings-reset --out-link reset   # reset/zmk.uf2
+```
+
+After changing `config/west.yml`, update `zephyrDepsHash` in `flake.nix` with the hash the build prints.
+
+Without Nix:
+
+```bash
+west build -d build/left -b nice_nano//zmk -S studio-rpc-usb-uart -- -DSHIELD=corne_left -DCONFIG_ZMK_STUDIO=y
+west build -d build/right -b nice_nano//zmk -- -DSHIELD=corne_right
 ```
 
 https://zmk.dev/docs/features/encoders

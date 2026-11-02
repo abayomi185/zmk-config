@@ -1,5 +1,26 @@
+name: Build ZMK firmware
+
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: cachix/install-nix-action@v31
+
+      - run: nix build -L .#firmware .#settings-reset --out-link result
+
+      - name: Collect firmware
+        run: |
+          mkdir firmware
+          cp -L result/zmk_left.uf2 firmware/corne_left.uf2
+          cp -L result/zmk_right.uf2 firmware/corne_right.uf2
+          cp -L result-1/zmk.uf2 firmware/settings_reset.uf2
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: firmware
+          path: firmware
+          if-no-files-found: error
