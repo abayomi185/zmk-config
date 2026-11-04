@@ -8,12 +8,12 @@ on:
       keyboard:
         description: Keyboard to build
         type: choice
-        default: corne
+        default: all
         options:
+          - all
           - corne
           - lily58
           - lily58-slim
-          - all
 
 jobs:
   build:

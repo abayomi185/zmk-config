@@ -42,9 +42,7 @@
         preConfigure = "cp keyboards/${name}/* config/";
         enableZmkStudio = true;
       });
-    in rec {
-      default = corne;
-
+    in {
       corne = splitKeyboard "corne" "corne";
       lily58 = splitKeyboard "lily58" "lily58";
       lily58-slim = splitKeyboard "lily58-slim" "lily58";
