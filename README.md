@@ -7,15 +7,15 @@ Each keyboard has its own folder in `keyboards/`. Lily58 and Lily58 Slim are sep
 ## Building
 
 ```bash
-nix build                                    # corne (default)
-nix build .#lily58 --out-link result         # result/zmk_left.uf2, result/zmk_right.uf2
+nix build .#corne --out-link result          # result/zmk_left.uf2, result/zmk_right.uf2
+nix build .#lily58 --out-link result
 nix build .#lily58-slim --out-link result
 nix build .#settings-reset --out-link reset  # reset/zmk.uf2
 ```
 
 After changing `config/west.yml`, update `zephyrDepsHash` in `flake.nix` with the hash the build prints.
 
-GitHub Actions builds every keyboard on push and pull request. To build one, run the workflow manually and pick a keyboard (default: corne).
+GitHub Actions builds every keyboard on push and pull request. To build one, run the workflow manually and pick a keyboard (default: all).
 
 https://zmk.dev/docs/features/encoders
 
