@@ -69,12 +69,12 @@
 // -----------------------------------------------------------------------------------------
 // |     |  1  |  2  |  3  |  4  |  5  |   |  6  |  7  |  8  |  9  |  0  | F24 |
 // |  `  |  !  |  @  |  #  |  $  |  %  |   |  ^  |  &  |  *  |  (  |  )  |  ~  |
-// | TOG |STUDI|WORK |     |BT_PV|BT_NT|   |  _  |PSCRN|     |  {  |  }  | "|" |
+// | TOG |WORK |STUDI|     |BT_PV|BT_NT|   |  _  |PSCRN|     |  {  |  }  | "|" |
 //                   |STOFF|     |BTCLR|   |     |     | BSPC|
                     bindings = <
    &trans       &kp N1     &kp N2     &kp N3       &kp N4       &kp N5              &kp N6      &kp N7    &kp N8    &kp N9    &kp N0   &kp F24
    &kp GRAVE    &kp EXCL   &kp AT     &kp HASH     &kp DLLR     &kp PRCNT           &kp CARET   &kp AMPS  &kp ASTRK &kp LPAR  &kp RPAR &kp TILDE
-   &out OUT_TOG &studio_unlock &tog 1     &trans       &bt BT_PRV   &bt BT_NXT          &kp UNDER   &kp PSCRN &trans    &kp LBRC  &kp RBRC &kp PIPE
+   &out OUT_TOG &tog 1     &studio_unlock &trans       &bt BT_PRV   &bt BT_NXT          &kp UNDER   &kp PSCRN &trans    &kp LBRC  &kp RBRC &kp PIPE
                                       &soft_off    &trans       &bt BT_CLR           &trans      &trans    &kp BSPC
                     >;
                 };
