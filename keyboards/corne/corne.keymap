@@ -15,7 +15,7 @@
 };
 
 &mt {
-    tapping-term-ms = <138>;
+    tapping-term-ms = <200>;
 };
 
 / {
