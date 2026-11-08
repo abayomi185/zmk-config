@@ -28,8 +28,8 @@ P = dict(
     wall=2.2,
     corner_r=5.0,       # plan-view rounding
     top_r=2.0,          # deck edge round-over
-    tuck_h=6.0,         # soft under-curve: height ...
-    tuck_in=3.0,        # ... and how far it pulls in at the bottom
+    tuck_in=3.0,        # soft under-curve: how far the skin pulls in at the bottom
+    tuck_r=5.0,         # its upper radius; below that a 45 deg chamfer (prints upright)
     plate_z=2.2,        # deck bottom = choc plate height above PCB
     deck_t=1.3,         # deck = integrated switch plate
     key_hole=14.0,
@@ -46,8 +46,12 @@ P = dict(
     oled_win=(185.1, 84.0, 8.0, 25.0),  # cx, cy, w, h
     reset=(192.9, 107.0), reset_hole=3.2,
     usb=(185.75, 5.1, 12.5, 7.5),       # cx, cz, w, h
-    pim=(185.9, 88.0, 22.4, 25.4),      # cx, cy, w, h (PIM447 is 25 x 22 x 9.5)
-    pim_ledge_z=7.0,
+    # PIM447: board screwed up into a locating recess under the hump roof,
+    # header tab towards the case edge so the ball sits next to the keys
+    pim_at=(175.9, 91.5),  # board edge on the key side (x), board centre (ky)
+    pim_roof=2.8,       # roof above the board: holds M2x4 self-tappers
+    pim_recess=1.0,     # locating recess depth around the board edge
+    pim_clr=0.25,
     screws=[(79.5, 86.75), (79.5, 105.5), (122.75, 122.75), (169.25, 130.5), (155.5, 83.0)],
     boss_d=4.4, pilot_d=1.7, clear_d=2.3, head_d=4.2, head_h=1.6, standoff_d=5.6,
     magsafe=(141.0, 96.0, 56.5, 45.5, 0.6),  # cx, cy, OD, ID, depth
@@ -180,32 +184,64 @@ def round_over(z0, z1, inset, n):
             for a in (k / n * math.pi / 2 for k in range(n + 1))]
 
 
-def tuck(z0, z1, inset, n):
-    """quarter ellipse: fully inset at z0, straight at z1"""
-    return sorted((z1 - (z1 - z0) * math.sin(a), inset * (1 - math.cos(a)))
-                  for a in (k / n * math.pi / 2 for k in range(n + 1)))
+def tuck(n):
+    return [(z, tuck_inset(z)) for z in np.linspace(Z_BOT, Z_BOT + tuck_h(), n + 1)]
 
 
 def tuck_inset(z):
-    v = min(max((Z_BOT + P["tuck_h"] - z) / P["tuck_h"], 0), 1)
-    return P["tuck_in"] * (1 - math.sqrt(1 - v * v))
+    """45 deg chamfer up from the bed, then an arc that ends tangent to the wall"""
+    r, ti = P["tuck_r"], P["tuck_in"]
+    aw, ah = r * (1 - math.sqrt(0.5)), r * math.sqrt(0.5)  # arc width / height
+    cw = ti - aw                                            # chamfer width = height
+    u = z - Z_BOT
+    if u <= cw:
+        return ti - u
+    if u >= cw + ah:
+        return 0.0
+    return r - math.sqrt(r * r - (ah - (u - cw)) ** 2)
+
+
+def tuck_h():
+    r = P["tuck_r"]
+    return P["tuck_in"] - r * (1 - math.sqrt(0.5)) + r * math.sqrt(0.5)
 
 
 # ---- parts ------------------------------------------------------------------
-def outlines():
+def pim():
+    """PIM447 in world XY (left-half coords, mirrored later). Outline from
+    takashicompany/tkbd-lib PIM447.kicad_mod: board 25 x 22, module 14.05 sq."""
+    x0, ky = P["pim_at"]; y = -ky
+    board = round2d(unary_union([box(x0, y - 12.5, x0 + 16.25, y + 12.5),
+                                 box(x0 + 16.0, y - 7.6, x0 + 22.0, y + 7.6)]), 1.0)
+    return dict(board=board, module=(x0 + 8.04, y),
+                holes=[(x0 + dx, y + dy) for dx in (2.6, 13.5) for dy in (-9.8, 9.8)],
+                pins=[(x0 + 20.48, y + 2.54 * k) for k in range(-2, 3)])
+
+
+def pim_z():
+    """board bottom, board top"""
+    top = P["hump_top"] - P["pim_roof"]
+    return top - 1.6, top
+
+
+def outlines(side="left"):
     pcb = pcb_outline()
     inner = round2d(off(pcb, P["clr"]), 1.0)
     outer = round2d(off(pcb, P["clr"] + P["wall"]), P["corner_r"])
+    skin = outer
+    if side == "right":  # the PIM447 is wider than the controller column: bulge the edge
+        xb = pim()["board"].bounds[2] + P["pim_clr"] + P["hump_wall"]
+        b = box(P["hump_x"][0], -P["hump_y"][1] - 6, xb, -P["hump_y"][0])
+        skin = round2d(outer.union(b), P["corner_r"])
     x0, x1 = P["hump_x"]; y0, y1 = P["hump_y"]; hr = P["hump_r"]
-    hump = off(box(x0 + hr, -y1 + hr, x1 + 20, -y0 - hr), hr).intersection(outer)
-    return pcb, inner, outer, hump
+    hump = off(box(x0 + hr, -y1 + hr, x1 + 30, -y0 - hr), hr).intersection(skin)
+    return pcb, inner, outer, skin, round2d(hump, 3.0)
 
 
 def build(side="left"):
-    pcb, inner, outer, hp = outlines()
-    zt = Z_BOT + P["tuck_h"]
-    shell = loft(outer, tuck(Z_BOT, zt, P["tuck_in"], 16)[:-1]
-                 + round_over(Z_DECK - P["top_r"], Z_DECK, P["top_r"], 12))
+    pcb, inner, outer, skin, hp = outlines(side)
+    zt = Z_BOT + tuck_h()
+    shell = loft(skin, tuck(16)[:-1] + round_over(Z_DECK - P["top_r"], Z_DECK, P["top_r"], 12))
     rt = P["hump_top"] - P["hump_top_r"]
     shell += loft(hp, [(0.0, 0.0)] + round_over(rt, P["hump_top"], P["hump_top_r"], 12))
 
@@ -213,7 +249,8 @@ def build(side="left"):
     cav = [slab(inner, Z_SOCK, P["plate_z"]), slab(off(outer, -P["wall"]), zt, Z_SOCK + 0.01)]
     zs = np.linspace(Z_BOT - 0.01, zt, 24)
     cav += [slab(off(outer, -P["wall"] - tuck_inset(a)), a, b + 0.01) for a, b in zip(zs[:-1], zs[1:])]
-    cav.append(slab(off(hp, -P["hump_wall"]).intersection(inner), 0.0, P["hump_top"] - P["hump_wall"]))
+    if side == "left":
+        cav.append(slab(off(hp, -P["hump_wall"]).intersection(inner), 0.0, P["hump_top"] - P["hump_wall"]))
     for x, y, r in keys():
         cav.append(cube(x, y, 5, P["key_hole"], P["key_hole"], 20, -r))
     ux, uz, uw, uh = P["usb"]
@@ -224,9 +261,11 @@ def build(side="left"):
         cx, cy, w, h = P["oled_win"]
         cav.append(slab(rect(cx, -cy, w, h, 1.0), 0, 30))
     else:
-        cx, cy, w, h = P["pim"]
-        cav.append(slab(rect(cx, -cy, w, h, 1.0), P["pim_ledge_z"], 30))
-        cav.append(slab(rect(cx, -cy, w - 3, h - 3, 1.0), 0, 30))
+        g = pim(); zb, ztop = pim_z()
+        cav.append(slab(off(hp, -P["hump_wall"]), 0.0, ztop - P["pim_recess"]))
+        cav.append(slab(off(g["board"], P["pim_clr"]), ztop - P["pim_recess"] - 0.01, ztop))
+        cav.append(slab(rect(*g["module"], 14.65, 14.65, 1.0), ztop - 0.01, 30))
+        cav += [cyl(x, y, ztop - 0.01, P["hump_top"] - 0.4, P["pilot_d"]) for x, y in g["holes"]]
     shell -= union(cav)
     # blind screw bosses under the deck: nothing shows on top
     shell += union([cyl(*xy(x, y), 0, P["plate_z"] + 0.01, P["boss_d"]) for x, y in P["screws"]])
@@ -248,6 +287,9 @@ def build(side="left"):
     floor -= union(holes)
 
     # sanity checks
+    if side == "right":
+        assert off(hp, -P["hump_wall"]).contains(off(pim()["board"], P["pim_clr"])), "PIM447 outside hump"
+        assert Point(*xy(*P["reset"])).distance(pim()["board"]) > P["reset_hole"] / 2 + 0.5, "PIM447 over reset"
     assert off(opening, -1).contains(off(bat, 1.2)), "battery bay outside floor"
     assert off(opening, -1.5).contains(Point(mx, -my).buffer(od / 2)), "MagSafe ring off the floor"
     for x, y in P["screws"]:
@@ -271,9 +313,14 @@ def proxies(side="left"):
     misc.append(slab(rect(P["battery_at"][0], -P["battery_at"][1], bl, bw, 1.5), Z_FLOOR, Z_FLOOR + bt))
     if side == "left":
         misc.append(cube(185.1, -87.6, 9.2, 12, 38, 1.6))
-    else:
-        cx, cy = P["pim"][0], -P["pim"][1]; z = P["pim_ledge_z"]
-        misc += [cube(cx, cy, z + 3.25, 22, 25, 6.5), Manifold.sphere(5.5, 48).translate((cx, cy, z + 6.5))]
+    else:  # PIM447: module height is estimated (listed 9.5 mm overall)
+        g = pim(); zb, ztop = pim_z()
+        board = slab(g["board"], zb, ztop) - union([cyl(x, y, zb - 1, ztop + 1, 2.5) for x, y in g["holes"]])
+        mx, my = g["module"]
+        misc += [board, cube(mx, my, ztop + 3.0, 14.05, 14.05, 6.0),
+                 Manifold.sphere(3.5, 48).translate((mx, my, ztop + 6.0 + 0.9))]
+        misc += [cyl(x, y, zb - 1.3, ztop, 1.8) + cyl(x, y, zb - 1.3, zb, 3.8) for x, y in g["holes"]]  # M2 screws
+        misc += [cyl(x, y, 3.8, zb, 0.6) for x, y in g["pins"]]  # wires
     out = dict(pcb=pcb, caps=caps, misc=union(misc))
     return {k: v.mirror((1, 0, 0)) for k, v in out.items()} if side == "right" else out
 
@@ -302,6 +349,10 @@ if __name__ == "__main__":
         shell, floor = build(side)
         write_stl(shell, models / f"{side}_shell.stl")
         write_stl(floor, models / f"{side}_floor.stl")
-        for name, part in proxies(side).items():
-            write_stl(part, preview / f"{side}_{name}.stl")
+        parts = dict(shell=shell, floor=floor, **proxies(side))
+        cut = -(87.6 if side == "left" else P["pim_at"][1])  # through the OLED / trackball
+        for name, part in parts.items():
+            if name not in ("shell", "floor"):
+                write_stl(part, preview / f"{side}_{name}.stl")
+            write_stl(part.trim_by_plane((0, 1, 0), cut), preview / f"{side}_sec_{name}.stl")
         print(side, "shell genus", shell.genus(), "tris", shell.num_tri(), "floor tris", floor.num_tri())
