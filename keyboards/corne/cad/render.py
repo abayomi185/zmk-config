@@ -60,14 +60,16 @@ def load(path, name, dz=0.0):
     return o
 
 
-def add_half(side, dx=0.0, explode=0.0):
+def add_half(side, dx=0.0, explode=0.0, sec=False):
     objs = []
     m, p = HERE / "models", HERE / ".preview"
-    objs.append(load(m / f"{side}_shell.stl", "shell", explode * 2))
-    objs.append(load(m / f"{side}_floor.stl", "floor"))
-    objs.append(load(p / f"{side}_pcb.stl", "pcb", explode))
-    objs.append(load(p / f"{side}_caps.stl", "caps", explode * 3))
-    objs.append(load(p / f"{side}_misc.stl", "misc", explode))
+    f = (lambda n: p / f"{side}_sec_{n}.stl") if sec else \
+        (lambda n: (m if n in ("shell", "floor") else p) / f"{side}_{n}.stl")
+    objs.append(load(f("shell"), "shell", explode * 2))
+    objs.append(load(f("floor"), "floor"))
+    objs.append(load(f("pcb"), "pcb", explode))
+    objs.append(load(f("caps"), "caps", explode * 3))
+    objs.append(load(f("misc"), "misc", explode))
     # centre on origin
     lo = Vector((min(o.bound_box[i][0] + o.location.x for o in objs[:1] for i in range(8)),
                  min(o.bound_box[i][1] + o.location.y for o in objs[:1] for i in range(8)), 0))
@@ -76,7 +78,7 @@ def add_half(side, dx=0.0, explode=0.0):
     c = (lo + hi) / 2
     for o in objs:
         o.location.x += dx - c.x; o.location.y -= c.y
-    return objs
+    return objs, c
 
 
 def lights_and_floor(ground=True):
@@ -121,6 +123,10 @@ for side in ("left", "right"):
     shoot(f"{side}_bottom", 20, -45, 420)
     reset(); add_half(side, explode=14); lights_and_floor()
     shoot(f"{side}_exploded", -30 if side == "left" else 30, 25, 520)
+    # section through the OLED / trackball (ky = KiCad y of its centre)
+    reset(); objs, c = add_half(side, sec=True); lights_and_floor()
+    hx = (1 if side == "left" else -1) * 58
+    shoot(f"{side}_section", 15 if side == "left" else -15, 10, 170, target=(hx, -(87.6 if side == "left" else 91.5) - c.y, 2))
 
 reset(); add_half("left", dx=-85); add_half("right", dx=85); lights_and_floor()
 shoot("pair", 0, 38, 640)
