@@ -19,20 +19,22 @@ import numpy as np
 from manifold3d import CrossSection, Manifold, Mesh, OpType, set_circular_segments, triangulate
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.geometry.polygon import orient
+from shapely import affinity
 from shapely.ops import polygonize, unary_union
 
 set_circular_segments(64)
 HERE = Path(__file__).parent
 P = dict(
     clr=0.5,            # PCB edge -> inner wall
-    wall=2.2,
+    wall=1.6,           # thinnest wall, at the bottom edge; thicker above by tuck_in
     corner_r=5.0,       # plan-view rounding
     top_r=2.0,          # deck edge round-over
-    tuck_in=3.0,        # soft under-curve: how far the skin pulls in at the bottom
+    tuck_in=2.0,        # soft under-curve: how far the skin pulls in at the bottom
     tuck_r=5.0,         # its upper radius; below that a 45 deg chamfer (prints upright)
     plate_z=2.2,        # deck bottom = choc plate height above PCB
     deck_t=1.3,         # deck = integrated switch plate
-    key_hole=14.0,
+    key_hole=15.6,      # switches are soldered: deck is a cover that drops over the 15 mm top housings
+    switch_top=15.0,    # choc top housing; the PCB + switches go in from below, so the cavity clears it
     socket_clear=2.0,   # hotswap sockets are 1.85
     battery=(34.0, 49.0, 6.0),  # EEMB 603449 (w, l, t)
     battery_at=(118.0, 100.0),  # centre (KiCad coords), long side along X
@@ -229,8 +231,11 @@ def pim_z():
 
 def outlines(side="left"):
     pcb = pcb_outline()
-    inner = round2d(off(pcb, P["clr"]), 1.0)
-    outer = round2d(off(pcb, P["clr"] + P["wall"]), P["corner_r"])
+    # cavity runs straight down so the PCB with soldered switches slides in from below
+    tops = unary_union([affinity.rotate(rect(x, y, P["switch_top"], P["switch_top"]), -r, origin=(x, y))
+                        for x, y, r in keys()])
+    inner = off(off(off(pcb.union(tops), P["clr"]), 3.0), -3.0)  # close: fill the small steps
+    outer = round2d(off(inner, P["wall"] + P["tuck_in"]), P["corner_r"])
     skin = outer
     if side == "right":  # the PIM447 is wider than the controller column: bulge the edge
         xb = pim()["board"].bounds[2] + P["pim_clr"] + P["hump_wall"]
@@ -243,15 +248,11 @@ def outlines(side="left"):
 
 def build(side="left"):
     pcb, inner, outer, skin, hp = outlines(side)
-    zt = Z_BOT + tuck_h()
     shell = loft(skin, tuck(16)[:-1] + round_over(Z_DECK - P["top_r"], Z_DECK, P["top_r"], 12))
     rt = P["hump_top"] - P["hump_top_r"]
     shell += loft(hp, [(0.0, 0.0)] + round_over(rt, P["hump_top"], P["hump_top_r"], 12))
 
-    # cavity: full outline down past the sockets, then follows the tuck inward
-    cav = [slab(inner, Z_SOCK, P["plate_z"]), slab(off(outer, -P["wall"]), zt, Z_SOCK + 0.01)]
-    zs = np.linspace(Z_BOT - 0.01, zt, 24)
-    cav += [slab(off(outer, -P["wall"] - tuck_inset(a)), a, b + 0.01) for a, b in zip(zs[:-1], zs[1:])]
+    cav = [slab(inner, Z_BOT - 0.01, P["plate_z"])]
     if side == "left":
         cav.append(slab(off(hp, -P["hump_wall"]).intersection(inner), 0.0, P["hump_top"] - P["hump_wall"]))
     for x, y, r in keys():
@@ -275,7 +276,7 @@ def build(side="left"):
     shell -= union([cyl(*xy(x, y), -0.1, Z_DECK - 0.6, P["pilot_d"]) for x, y in P["screws"]])
 
     # floor
-    opening = off(outer, -P["tuck_in"] - P["wall"])
+    opening = inner
     floor = slab(off(opening, -P["floor_tol"]), Z_BOT, Z_FLOOR)
     floor += union([cyl(*xy(x, y), Z_FLOOR - 0.01, Z_PCB_BOT, P["standoff_d"]) for x, y in P["screws"]])
     bw, bl, bt = P["battery"]; bx, by = P["battery_at"]
@@ -290,6 +291,7 @@ def build(side="left"):
     floor -= union(holes)
 
     # sanity checks
+    assert off(skin, -P["tuck_in"]).contains(off(inner, P["wall"] - 0.2)), "bottom edge wall too thin"
     sd, fd, ft, sink = P["reset_pin"]
     roof = P["hump_top"] - P["hump_wall"] if side == "left" else pim_z()[1] - P["pim_recess"]
     assert P["reset_sw_h"] + ft < roof - 0.5, "reset pin flange above roof underside"
