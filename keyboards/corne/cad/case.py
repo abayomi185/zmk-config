@@ -62,7 +62,8 @@ P = dict(
     screws=[(79.5, 86.75), (79.5, 105.5), (122.75, 122.75), (169.25, 130.5), (155.5, 83.0)],
     # countersunk M2 from below into a hex nut captured in a boss under the deck (nut drops
     # in with the shell upside down, then the PCB covers it)
-    screw_len=14.0, csk_d=4.0, clear_d=2.3, nut_af=4.0, nut_t=1.6, nut_tol=0.15,
+    screw_len=12.0, head_sink=2.0, csk_d=4.0,  # head sits in a well so M2x12 reaches through the nut
+    clear_d=2.3, nut_af=4.0, nut_t=1.6, nut_tol=0.15,
     boss_d=6.6, standoff_d=5.6,
     switch_bot=14.4,    # choc lower housing 13.8 + clearance: bosses keep out of it
     magsafe=(141.0, 96.0, 56.5, 45.5, 0.6),  # cx, cy, OD, ID, depth
@@ -281,7 +282,7 @@ def build(side="left"):
     sb = P["switch_bot"]
     bots = union([cube(x, y, 1, sb, sb, 2.2, -r) for x, y, r in keys()])
     shell += union([cyl(*xy(x, y), 0, P["plate_z"] + 0.01, P["boss_d"]) for x, y in P["screws"]]) - bots
-    tip = Z_BOT + P["screw_len"]
+    tip = Z_BOT + P["head_sink"] + P["screw_len"]
     nr = (P["nut_af"] / 2 + P["nut_tol"]) / math.cos(math.pi / 6)
     hexp = lambda x, y: Polygon([(x + nr * math.cos(a), y + nr * math.sin(a)) for a in np.arange(6) * math.pi / 3])
     shell -= union([slab(hexp(*xy(x, y)), -0.1, P["nut_t"] + 0.1) for x, y in P["screws"]]
@@ -297,7 +298,9 @@ def build(side="left"):
     floor += slab(off(bat, 1.2).difference(bat).intersection(corners), Z_FLOOR - 0.01, Z_FLOOR + 2.5)
     holes = [cyl(*xy(x, y), Z_BOT - 1, 40, P["clear_d"]) for x, y in P["screws"]]
     ch = (P["csk_d"] - P["clear_d"]) / 2  # 90 deg countersink depth
-    holes += [Manifold.cylinder(ch + 0.2, P["csk_d"] / 2 + 0.2, P["clear_d"] / 2).translate((*xy(x, y), Z_BOT - 0.2))
+    zh = Z_BOT + P["head_sink"]
+    holes += [cyl(*xy(x, y), Z_BOT - 1, zh, P["csk_d"] + 0.2) for x, y in P["screws"]]
+    holes += [Manifold.cylinder(ch + 0.1, P["csk_d"] / 2 + 0.1, P["clear_d"] / 2).translate((*xy(x, y), zh - 0.01))
               for x, y in P["screws"]]
     mx, my, od, idd, dep = P["magsafe"]
     ringp = Point(mx, -my).buffer(od / 2, 64).difference(Point(mx, -my).buffer(idd / 2, 64))
@@ -305,7 +308,7 @@ def build(side="left"):
     floor -= union(holes)
 
     # sanity checks
-    tip = Z_BOT + P["screw_len"]
+    tip = Z_BOT + P["head_sink"] + P["screw_len"]
     assert P["nut_t"] + 0.4 < tip < Z_DECK - 0.5, f"screw tip {tip:.1f} misses nut or shows through deck"
     assert off(skin, -P["tuck_in"]).contains(off(inner, P["wall"] - 0.2)), "bottom edge wall too thin"
     sd, fd, ft, sink = P["reset_pin"]
