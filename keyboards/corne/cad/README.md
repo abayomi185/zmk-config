@@ -7,7 +7,7 @@ Two-piece PETG wrap case for the Corne LP (corne-chocolate v3 / Helidox), nice!n
 
 - `shell`: deck, walls and controller hump in one piece. The switches are soldered, so the deck is a cover with 15.6 mm holes rather than a switch plate. Take the keycaps off, then slide the PCB with its switches in from below; the cavity runs straight down and clears the switch housings that overhang the PCB edge
 - `floor`: drops in from below, so the only seam is on the bottom; has the MagSafe ring recess and battery fences
-- 5 × M2×14 countersunk screws go up through the floor and PCB into M2 hex nuts (4 mm AF, 1.6 mm) captured in bosses under the deck. With the shell upside down, drop the nuts into their pockets, then lay the PCB in and screw the floor on. Heads sit flush with the floor
+- 5 × M2×12 countersunk screws go up through the floor and PCB into M2 hex nuts (4 mm AF, 1.6 mm) captured in bosses under the deck. With the shell upside down, drop the nuts into their pockets, then lay the PCB in and screw the floor on. Heads sit 2 mm up in wells in the floor
 - PIM447 (right hump): the board sits in a 1 mm locating recess under the hump roof and is held by 4 × M2×4 self-tappers through its mounting holes; the trackball module pokes through the roof. The hump bulges ~2.3 mm past the case edge because the board (22 mm) is wider than the controller column. Wire it from below to the OLED header holes
 - No power switch: use `&soft_off`, and press reset to wake. `reset_pin` is a loose printed pin in the hump's reset hole: it rests on the switch with its top 0.3 mm under the surface, and a flange stops it falling out. Print one per half, standing on the flange. Its length assumes a 4.3 mm tall switch (`reset_sw_h`)
 
