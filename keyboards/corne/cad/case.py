@@ -45,6 +45,9 @@ P = dict(
     hump_top=12.0, hump_wall=1.6, hump_r=5.0, hump_top_r=2.5,
     oled_win=(185.1, 84.0, 8.0, 25.0),  # cx, cy, w, h
     reset=(192.9, 107.0), reset_hole=3.2,
+    # loose printed pin in the reset hole, rests on the switch; flange keeps it in
+    reset_sw_h=4.3,     # tact switch top above PCB (estimated)
+    reset_pin=(2.8, 4.2, 0.8, 0.3),  # stem d, flange d, flange t, top below hump surface
     usb=(185.75, 5.1, 12.5, 7.5),       # cx, cz, w, h
     # PIM447: board screwed up into a locating recess under the hump roof,
     # header tab towards the case edge so the ball sits next to the keys
@@ -287,6 +290,11 @@ def build(side="left"):
     floor -= union(holes)
 
     # sanity checks
+    sd, fd, ft, sink = P["reset_pin"]
+    roof = P["hump_top"] - P["hump_wall"] if side == "left" else pim_z()[1] - P["pim_recess"]
+    assert P["reset_sw_h"] + ft < roof - 0.5, "reset pin flange above roof underside"
+    assert Point(*xy(*P["reset"])).buffer(fd / 2 + 0.2).within(off(hp, -P["hump_wall"]).intersection(inner)), "reset pin flange hits wall"
+    assert sd + 0.3 <= P["reset_hole"] < fd - 0.6, "reset pin vs hole"
     if side == "right":
         assert off(hp, -P["hump_wall"]).contains(off(pim()["board"], P["pim_clr"])), "PIM447 outside hump"
         assert Point(*xy(*P["reset"])).distance(pim()["board"]) > P["reset_hole"] / 2 + 0.5, "PIM447 over reset"
@@ -321,8 +329,16 @@ def proxies(side="left"):
                  Manifold.sphere(3.5, 48).translate((mx, my, ztop + 6.0 + 0.9))]
         misc += [cyl(x, y, zb - 1.3, ztop, 1.8) + cyl(x, y, zb - 1.3, zb, 3.8) for x, y in g["holes"]]  # M2 screws
         misc += [cyl(x, y, 3.8, zb, 0.6) for x, y in g["pins"]]  # wires
+    misc.append(reset_pin().translate((*xy(*P["reset"]), P["reset_sw_h"])))
     out = dict(pcb=pcb, caps=caps, misc=union(misc))
     return {k: v.mirror((1, 0, 0)) for k, v in out.items()} if side == "right" else out
+
+
+def reset_pin():
+    """pin standing on its flange at the origin, length so its top sits just under the hump surface"""
+    sd, fd, ft, sink = P["reset_pin"]
+    h = P["hump_top"] - sink - P["reset_sw_h"]
+    return cyl(0, 0, 0, ft, fd) + cyl(0, 0, 0, h, sd)
 
 
 def write_stl(m: Manifold, path: Path):
@@ -345,6 +361,7 @@ if __name__ == "__main__":
     preview = HERE / ".preview"; preview.mkdir(exist_ok=True)
     print(f"Z: bottom {Z_BOT:.1f}  floor top {Z_FLOOR:.1f}  PCB 0  deck {Z_DECK:.1f}  hump {P['hump_top']:.1f}\n"
           f"height: keys {Z_DECK - Z_BOT:.1f}  hump {P['hump_top'] - Z_BOT:.1f}  PCB top above desk {-Z_BOT:.1f}")
+    write_stl(reset_pin(), models / "reset_pin.stl")  # print 2, standing on the flange
     for side in sys.argv[1:] or ["left", "right"]:
         shell, floor = build(side)
         write_stl(shell, models / f"{side}_shell.stl")
