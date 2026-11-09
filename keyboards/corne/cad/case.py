@@ -2,7 +2,8 @@
 
 Two printed parts per half:
   shell  deck (= switch plate) + walls + controller hump, wraps to the bottom
-  floor  drops in from below; M2 screws go up through floor + PCB into blind bosses
+  floor  drops in from below; countersunk M2 screws go up through floor + PCB into nuts
+         captured in bosses under the deck
 
 Coords: X,Y = KiCad PCB coords with Y flipped; Z = 0 at PCB top. The left half is
 the PCB as drawn, the right half is its mirror. pcb.json holds Edge.Cuts and
@@ -55,10 +56,15 @@ P = dict(
     # header tab towards the case edge so the ball sits next to the keys
     pim_at=(175.9, 91.5),  # board edge on the key side (x), board centre (ky)
     pim_roof=2.8,       # roof above the board: holds M2x4 self-tappers
+    pim_pilot_d=1.7,
     pim_recess=1.0,     # locating recess depth around the board edge
     pim_clr=0.25,
     screws=[(79.5, 86.75), (79.5, 105.5), (122.75, 122.75), (169.25, 130.5), (155.5, 83.0)],
-    boss_d=4.4, pilot_d=1.7, clear_d=2.3, head_d=4.2, head_h=1.6, standoff_d=5.6,
+    # countersunk M2 from below into a hex nut captured in a boss under the deck (nut drops
+    # in with the shell upside down, then the PCB covers it)
+    screw_len=14.0, csk_d=4.0, clear_d=2.3, nut_af=4.0, nut_t=1.6, nut_tol=0.15,
+    boss_d=6.6, standoff_d=5.6,
+    switch_bot=14.4,    # choc lower housing 13.8 + clearance: bosses keep out of it
     magsafe=(141.0, 96.0, 56.5, 45.5, 0.6),  # cx, cy, OD, ID, depth
 )
 
@@ -269,11 +275,17 @@ def build(side="left"):
         cav.append(slab(off(hp, -P["hump_wall"]), 0.0, ztop - P["pim_recess"]))
         cav.append(slab(off(g["board"], P["pim_clr"]), ztop - P["pim_recess"] - 0.01, ztop))
         cav.append(slab(rect(*g["module"], 14.65, 14.65, 1.0), ztop - 0.01, 30))
-        cav += [cyl(x, y, ztop - 0.01, P["hump_top"] - 0.4, P["pilot_d"]) for x, y in g["holes"]]
+        cav += [cyl(x, y, ztop - 0.01, P["hump_top"] - 0.4, P["pim_pilot_d"]) for x, y in g["holes"]]
     shell -= union(cav)
-    # blind screw bosses under the deck: nothing shows on top
-    shell += union([cyl(*xy(x, y), 0, P["plate_z"] + 0.01, P["boss_d"]) for x, y in P["screws"]])
-    shell -= union([cyl(*xy(x, y), -0.1, Z_DECK - 0.6, P["pilot_d"]) for x, y in P["screws"]])
+    # nut bosses under the deck: nothing shows on top
+    sb = P["switch_bot"]
+    bots = union([cube(x, y, 1, sb, sb, 2.2, -r) for x, y, r in keys()])
+    shell += union([cyl(*xy(x, y), 0, P["plate_z"] + 0.01, P["boss_d"]) for x, y in P["screws"]]) - bots
+    tip = Z_BOT + P["screw_len"]
+    nr = (P["nut_af"] / 2 + P["nut_tol"]) / math.cos(math.pi / 6)
+    hexp = lambda x, y: Polygon([(x + nr * math.cos(a), y + nr * math.sin(a)) for a in np.arange(6) * math.pi / 3])
+    shell -= union([slab(hexp(*xy(x, y)), -0.1, P["nut_t"] + 0.1) for x, y in P["screws"]]
+                   + [cyl(*xy(x, y), -0.1, tip + 0.1, P["clear_d"]) for x, y in P["screws"]])
 
     # floor
     opening = inner
@@ -284,13 +296,17 @@ def build(side="left"):
     corners = unary_union([Point(c).buffer(7, cap_style="square") for c in bat.exterior.coords[:4]])
     floor += slab(off(bat, 1.2).difference(bat).intersection(corners), Z_FLOOR - 0.01, Z_FLOOR + 2.5)
     holes = [cyl(*xy(x, y), Z_BOT - 1, 40, P["clear_d"]) for x, y in P["screws"]]
-    holes += [cyl(*xy(x, y), Z_BOT - 1, Z_BOT + P["head_h"], P["head_d"]) for x, y in P["screws"]]
+    ch = (P["csk_d"] - P["clear_d"]) / 2  # 90 deg countersink depth
+    holes += [Manifold.cylinder(ch + 0.2, P["csk_d"] / 2 + 0.2, P["clear_d"] / 2).translate((*xy(x, y), Z_BOT - 0.2))
+              for x, y in P["screws"]]
     mx, my, od, idd, dep = P["magsafe"]
     ringp = Point(mx, -my).buffer(od / 2, 64).difference(Point(mx, -my).buffer(idd / 2, 64))
     holes.append(slab(ringp, Z_BOT - 1, Z_BOT + dep))
     floor -= union(holes)
 
     # sanity checks
+    tip = Z_BOT + P["screw_len"]
+    assert P["nut_t"] + 0.4 < tip < Z_DECK - 0.5, f"screw tip {tip:.1f} misses nut or shows through deck"
     assert off(skin, -P["tuck_in"]).contains(off(inner, P["wall"] - 0.2)), "bottom edge wall too thin"
     sd, fd, ft, sink = P["reset_pin"]
     roof = P["hump_top"] - P["hump_wall"] if side == "left" else pim_z()[1] - P["pim_recess"]
@@ -305,7 +321,7 @@ def build(side="left"):
     for x, y in P["screws"]:
         assert Point(x, -y).distance(bat) > P["standoff_d"] / 2 + 0.5, f"standoff {x},{y} hits battery"
         d = Point(mx, -my).distance(Point(x, -y))
-        assert not (idd / 2 - P["head_d"] / 2 - 0.5 < d < od / 2 + P["head_d"] / 2 + 0.5), f"screw {x},{y} on ring"
+        assert not (idd / 2 - P["csk_d"] / 2 - 0.5 < d < od / 2 + P["csk_d"] / 2 + 0.5), f"screw {x},{y} on ring"
 
     if side == "right":
         shell, floor = shell.mirror((1, 0, 0)), floor.mirror((1, 0, 0))
