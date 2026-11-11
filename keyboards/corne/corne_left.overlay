@@ -1,0 +1,5 @@
+#include "trackball.dtsi"
+
+&trackball_listener {
+    status = "okay";
+};
