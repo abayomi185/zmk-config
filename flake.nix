@@ -39,7 +39,7 @@
       splitKeyboard = name: shield: buildSplitKeyboard (common // {
         inherit name;
         shield = "${shield}_%PART%";
-        preConfigure = "cp keyboards/${name}/* config/";
+        preConfigure = "cp keyboards/${name}/*.* config/"; # files only, skips cad/
         enableZmkStudio = true;
       });
     in {
