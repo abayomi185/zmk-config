@@ -39,7 +39,7 @@ P = dict(
     key_hole=15.8,      # switches are soldered: deck is a cover that drops over the 15 mm top housings
     switch_top=15.0,    # choc top housing; the PCB + switches go in from below, so the cavity clears it
     switch_body=13.8, switch_h=5.0,  # choc lower housing, housing top above PCB
-    cap=(17.5, 16.5), cap_gap=0.5,  # 1u keycap; the hump keeps this far from the caps
+    cap=(17.5, 16.5),   # 1u keycap, on every key including the 1.5u thumb position
     socket_clear=2.0,   # hotswap sockets are 1.85
     battery=(34.0, 49.0, 6.0),  # EEMB 603449 (w, l, t)
     battery_at=(118.0, 100.0),  # centre (KiCad coords), long side along X
@@ -125,8 +125,7 @@ def pcb_outline() -> Polygon:
 
 
 def keys():
-    """x, y, angle, width in u"""
-    return [(x, -y, r, 1.5 if "1.5u" in n else 1.0) for n, x, y, r in pcb_data()["fps"] if "Choc" in n]
+    return [(x, -y, r) for n, x, y, r in pcb_data()["fps"] if "Choc" in n]
 
 
 def xy(x, ky):
@@ -137,9 +136,8 @@ def key_rect(x, y, r, w, h=None):
     return affinity.rotate(rect(x, y, w, h or w), r, origin=(x, y))
 
 
-def cap_rect(x, y, r, u):
-    w, h = P["cap"]
-    return key_rect(x, y, r, w + (u - 1) * 19.0, h)
+def cap_rect(x, y, r):
+    return key_rect(x, y, r, *P["cap"])
 
 
 # ---- 2D (shapely) -------------------------------------------------------------
@@ -259,7 +257,7 @@ def pim_z():
 def outlines(side="left"):
     pcb = pcb_outline()
     # cavity runs straight down so the PCB with soldered switches slides in from below
-    tops = unary_union([key_rect(x, y, r, P["switch_top"]) for x, y, r, _ in keys()])
+    tops = unary_union([key_rect(x, y, r, P["switch_top"]) for x, y, r in keys()])
     inner = off(off(off(pcb.union(tops), P["clr"]), 3.0), -3.0)  # close: fill the small steps
     outer = round2d(off(inner, P["wall"] + P["tuck_in"]), P["corner_r"])
     skin = outer
@@ -268,11 +266,8 @@ def outlines(side="left"):
         xb = pim()["board"].bounds[2] + P["pim_clr"] + P["hump_wall"]
         top = outer.intersection(box(x1 - 5, -y1, x1, 0)).bounds[3]  # leave the USB edge alone
         skin = round2d(outer.union(box(x0, -y1 - 6, xb, top)), P["corner_r"])
-    hump = round2d(off(box(x0 + hr, -y1 + hr, x1 + 30, -y0 - hr), hr).intersection(skin), 3.0)
-    # the TRRS end reaches the 1.5u thumb keycap: notch the hump around it
-    caps = unary_union([cap_rect(*k) for k in keys()])
-    hump = off(off(hump.difference(off(caps, P["cap_gap"])), -3.0), 3.0)
-    return pcb, inner, outer, skin, hump
+    hump = off(box(x0 + hr, -y1 + hr, x1 + 30, -y0 - hr), hr).intersection(skin)
+    return pcb, inner, outer, skin, round2d(hump, 3.0)
 
 
 def hump_cavity(hp):
@@ -284,7 +279,7 @@ def hump_cavity(hp):
 def internals(side="left"):
     """what is soldered to the PCB, at real sizes, as (outline, z0, z1)"""
     out = [(pcb_outline(), Z_PCB_BOT, 0.0)]
-    for x, y, r, _ in keys():
+    for x, y, r in keys():
         out.append((key_rect(x, y, r, P["switch_body"]), 0.0, P["plate_z"]))
         out.append((key_rect(x, y, r, P["switch_top"]), P["plate_z"], P["switch_h"]))
     (nx, ny), (nw, nl, nt) = P["nano"][side], P["nano_size"]
@@ -328,7 +323,7 @@ def build(side="left"):
     assert sd + 0.3 <= P["reset_hole"] < fd - 0.6, "reset pin vs hole"
     for p, z0, z1 in internals(side)[1 + 2 * len(keys()):]:  # nano, TRRS, reset switch, OLED
         assert z1 < roof - 0.3 and hc.contains(off(p, 0.3)), f"{side}: part at {p.centroid.coords[0]} outside hump"
-    assert min(cap_rect(*k).distance(hp) for k in keys()) > P["cap_gap"] - 0.05, "keycap rubs the hump"
+    assert min(cap_rect(*k).distance(hp) for k in keys()) > 0.5, "keycap rubs the hump"
     if side == "right":
         assert hc.contains(off(g["board"], P["pim_clr"])), "PIM447 outside hump"
         assert Point(rxy).distance(g["board"]) > P["reset_hole"] / 2 + 0.5, "PIM447 over reset"
@@ -344,7 +339,7 @@ def build(side="left"):
     shell += loft(hp, [(0.0, 0.0)] + round_over(rt, P["hump_top"], P["hump_top_r"], 12))
 
     kh = P["key_hole"]
-    holes = union([cube(x, y, 5, kh, kh, 20, r) for x, y, r, _ in keys()])
+    holes = union([cube(x, y, 5, kh, kh, 20, r) for x, y, r in keys()])
     cav = [slab(inner, Z_BOT - 0.01, P["plate_z"]), holes, slab(hc, 0.0, roof)]
     uw, uh = P["usb"]
     usb = Manifold.extrude(cs(rect(0, 0, uw, uh, 2.0)), 12).rotate((90, 0, 0))
