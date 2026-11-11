@@ -1,0 +1,18 @@
+#include "trackball.dtsi"
+
+// No OLED on this half; the bus is shared with the trackball.
+&oled {
+    status = "disabled";
+};
+
+&pro_micro_i2c {
+    trackball: trackball@a {
+        compatible = "pimoroni,pim447";
+        reg = <0xa>;
+        int-gpios = <&pro_micro 9 GPIO_ACTIVE_LOW>;
+    };
+};
+
+&trackball_split {
+    device = <&trackball>;
+};

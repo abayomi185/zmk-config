@@ -1,0 +1,22 @@
+/*
+ * PIM447 trackball on the right (peripheral) half, relayed to the central.
+ * The listener is disabled here so the keymap can reference it on both halves.
+ */
+
+/ {
+    split_inputs {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        trackball_split: trackball_split@0 {
+            compatible = "zmk,input-split";
+            reg = <0>;
+        };
+    };
+
+    trackball_listener: trackball_listener {
+        compatible = "zmk,input-listener";
+        status = "disabled";
+        device = <&trackball_split>;
+    };
+};

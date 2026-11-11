@@ -16,10 +16,10 @@
     packages = forAllSystems (system: let
       inherit (zmk-nix.legacyPackages.${system}) buildKeyboard buildSplitKeyboard fetchZephyrDeps;
 
-      src = nixpkgs.lib.sourceFilesBySuffices self [ ".conf" ".keymap" ".yml" ];
+      src = nixpkgs.lib.sourceFilesBySuffices self [ ".conf" ".keymap" ".yml" ".overlay" ".dtsi" ];
 
       # Update whenever config/west.yml changes; the build prints the new hash on a mismatch.
-      zephyrDepsHash = "sha256-hlSPr62unE/JL1WY4AUFngCXbKjluJ7ZNi38eOV1GmQ=";
+      zephyrDepsHash = "sha256-/DZiqvJ21jsb5vAGDIeupRu7LaUI+1+wlxEqGzHE9jY=";
 
       # Shared so each keyboard doesn't download its own copy.
       westDeps = fetchZephyrDeps {

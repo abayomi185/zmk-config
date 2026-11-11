@@ -4,11 +4,16 @@ manifest:
       url-base: https://github.com/zmkfirmware
     - name: abayomi185
       url-base: https://github.com/abayomi185
+    - name: michaelcoquet
+      url-base: https://github.com/michaelcoquet
   projects:
     - name: zmk
       remote: abayomi185
       revision: ae878f04b683996d15a6dee08cb0fc5fa9a0dc60 # corne-display-fix: main 4dd95d7 + zmkfirmware/zmk#3236
       import: app/west.yml
+    - name: zmk-driver-pim447
+      remote: michaelcoquet
+      revision: 9713fb6b1b88f332a725040f2ab0a7a4993dee86 # main, 2026-08-14
     - name: zephyr
       remote: zmkfirmware
       revision: 10ba6d0cb38bc3d258775d27982f707599320085 # v4.1.0+zmk-fixes, as pinned by ZMK
