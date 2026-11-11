@@ -26,6 +26,4 @@ Dimensions live in `P` at the top of `case.py`; the build asserts that the PCB w
 
 PETG, 0.2 mm layers. Print the floor flat. Print the shell upright (open side down) with tree supports from the build plate under the deck and hump roof; the bottom edge is a 45° chamfer so it needs none there. Use a 0.2–0.25 mm support top gap, since PETG fuses to tight supports.
 
-`models/slice.3mf` is the Bambu Studio project; reload the STLs from disk after a rebuild.
-
 Estimated, check before printing: nice!nano height on the stock headers (2.5 mm spacer; the USB-C opening is centred on it), OLED stack height, PIM447 module height, reset switch height, keycap skirt depth (the deck top is 1.5 mm below the switch housing top).
