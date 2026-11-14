@@ -2,12 +2,13 @@
 
 Two printed parts per half:
   shell  deck (= switch plate) + walls + controller hump, wraps to the bottom
-  floor  drops in from below; countersunk M2 screws go up through floor + PCB into nuts
-         captured in bosses under the deck
+  floor  drops in from below; countersunk M2 screws go up through floor + PCB and thread
+         into bosses under the deck, clamping shell, PCB and floor together
 
 Coords: X,Y = KiCad PCB coords with Y flipped; Z = 0 at PCB top. The left half is
 the PCB as drawn, the right half is its mirror. pcb.json holds Edge.Cuts and
 footprint positions from foostan/crkbd@v3-final corne-chocolate.kicad_pcb.
+Footprint angles are KiCad's (counter-clockwise on screen), so they carry over as-is.
 
 Mesh CSG (manifold3d) with lofted skins; outputs STL.
 Build:  uv run --python 3.12 --with manifold3d --with shapely --with numpy case.py
@@ -32,45 +33,53 @@ P = dict(
     top_r=2.0,          # deck edge round-over
     tuck_in=2.0,        # soft under-curve: how far the skin pulls in at the bottom
     tuck_r=5.0,         # its upper radius; below that a 45 deg chamfer (prints upright)
+    pcb_t=1.6,
     plate_z=2.2,        # deck bottom = choc plate height above PCB
     deck_t=1.3,         # deck = integrated switch plate
-    key_hole=15.6,      # switches are soldered: deck is a cover that drops over the 15 mm top housings
+    key_hole=15.8,      # switches are soldered: deck is a cover that drops over the 15 mm top housings
     switch_top=15.0,    # choc top housing; the PCB + switches go in from below, so the cavity clears it
+    switch_body=13.8, switch_h=5.0,  # choc lower housing, housing top above PCB
+    cap=(17.5, 16.5),   # 1u keycap, on every key including the 1.5u thumb position
     socket_clear=2.0,   # hotswap sockets are 1.85
     battery=(34.0, 49.0, 6.0),  # EEMB 603449 (w, l, t)
     battery_at=(118.0, 100.0),  # centre (KiCad coords), long side along X
     battery_gap=0.3,
     floor_t=1.2,
     floor_tol=0.2,
-    # controller column: nice!nano on stock headers + black spacer
-    nano=(185.75, 86.25), nano_z=2.5,  # board underside above PCB
-    hump_x=(174.0, 194.75), hump_y=(60.0, 118.0),
-    hump_top=12.0, hump_wall=1.6, hump_r=5.0, hump_top_r=2.5,
-    oled_win=(185.1, 84.0, 8.0, 25.0),  # cx, cy, w, h
+    # controller column: nice!nano on stock headers + black spacer. The Pro Micro footprint has
+    # two sets of holes 1.27 mm apart; both nanos are in the outer set, flush with the PCB edge
+    nano=(185.80, 85.74), nano_size=(18.0, 33.0, 1.6),
+    nano_z=2.5,         # board underside above PCB
+    hump_x=(174.5, 194.75), hump_y=(60.0, 121.8),
+    hump_top=12.4, hump_wall=1.6, hump_r=5.0, hump_top_r=2.5,
+    oled=(185.1, 87.6, 12.0, 38.0), oled_z=8.4,  # cx, cy, w, h; module underside above PCB (estimated)
+    oled_win=(185.1, 87.85, 12.4, 32.8),  # cx, cy, w, h: the module less its header, as in the Fusion case
+    trrs=(182.7, 194.7, 111.9, 119.7, 5.0),  # x0, x1, ky0, ky1, h: MJ-4PP-9, both sides' footprints
     reset=(192.9, 107.0), reset_hole=3.2,
     # loose printed pin in the reset hole, rests on the switch; flange keeps it in
-    reset_sw_h=4.3,     # tact switch top above PCB (estimated)
+    reset_sw=(3.5, 6.0, 4.3),  # tact switch w, l, top above PCB (height estimated)
     reset_pin=(2.8, 4.2, 0.8, 0.3),  # stem d, flange d, flange t, top below hump surface
-    usb=(185.75, 5.1, 12.5, 7.5),       # cx, cz, w, h
+    usb=(13.5, 8.0),    # w, h; centred on the nano's mid-mount USB-C. The plug overmold (12.35 x 6.5
+                        # at most by the spec) has to pass ~4 mm through it to seat
     # PIM447: board screwed up into a locating recess under the hump roof,
     # header tab towards the case edge so the ball sits next to the keys
-    pim_at=(175.9, 91.5),  # board edge on the key side (x), board centre (ky)
-    pim_roof=2.8,       # roof above the board: holds M2x4 self-tappers
+    pim_ky=91.5,        # board centre
+    pim_hole=14.65,     # roof opening for the 14.05 mm module
+    pim_roof=3.2,       # roof above the board: holds M2x4 self-tappers
     pim_pilot_d=1.7,
     pim_recess=1.0,     # locating recess depth around the board edge
     pim_clr=0.25,
     screws=[(79.5, 86.75), (79.5, 105.5), (122.75, 122.75), (169.25, 130.5), (155.5, 83.0)],
-    # countersunk M2 from below into a hex nut captured in a boss under the deck (nut drops
-    # in with the shell upside down, then the PCB covers it)
-    screw_len=12.0, head_sink=2.0, csk_d=4.0,  # head sits in a well so M2x12 reaches through the nut
-    clear_d=2.3, nut_af=4.0, nut_t=1.6, nut_tol=0.15,
-    boss_d=6.6, standoff_d=5.6,
-    switch_bot=14.4,    # choc lower housing 13.8 + clearance: bosses keep out of it
+    # countersunk M2 from below, threading into a pilot hole in a boss under the deck
+    screw_len=12.0, head_sink=1.6, csk_d=4.0,  # head sits in a well so M2x12 stops inside the deck
+    clear_d=2.3, pilot_d=1.8,
+    pilot_extra=0.5,    # pilot depth past the screw tip: 3.5-4 mm heads seat up to 0.35 deeper
+    boss_d=6.6, standoff_d=6.0,  # standoff: the socket of key (165, 74.75) is 3.5 from the screw
     magsafe=(141.0, 96.0, 56.5, 45.5, 0.6),  # cx, cy, OD, ID, depth
 )
 
 Z_DECK = P["plate_z"] + P["deck_t"]
-Z_PCB_BOT = -1.6
+Z_PCB_BOT = -P["pcb_t"]
 Z_SOCK = Z_PCB_BOT - P["socket_clear"]
 Z_FLOOR = Z_SOCK - P["battery"][2] - P["battery_gap"]
 Z_BOT = Z_FLOOR - P["floor_t"]
@@ -121,6 +130,14 @@ def keys():
 
 def xy(x, ky):
     return (x, -ky)
+
+
+def key_rect(x, y, r, w, h=None):
+    return affinity.rotate(rect(x, y, w, h or w), r, origin=(x, y))
+
+
+def cap_rect(x, y, r):
+    return key_rect(x, y, r, *P["cap"])
 
 
 # ---- 2D (shapely) -------------------------------------------------------------
@@ -220,9 +237,10 @@ def tuck_h():
 
 # ---- parts ------------------------------------------------------------------
 def pim():
-    """PIM447 in world XY (left-half coords, mirrored later). Outline from
-    takashicompany/tkbd-lib PIM447.kicad_mod: board 25 x 22, module 14.05 sq."""
-    x0, ky = P["pim_at"]; y = -ky
+    """PIM447 in world XY (left-half coords, mirrored later). Module, holes and pins from
+    takashicompany/tkbd-lib PIM447.kicad_mod; the 25 x 22 board's header tab is estimated."""
+    # ball as near the keys as it gets with the module hole clear of the roof round-over
+    x0 = P["hump_x"][0] + P["hump_top_r"] + P["pim_hole"] / 2 + 0.1 - 8.04; y = -P["pim_ky"]
     board = round2d(unary_union([box(x0, y - 12.5, x0 + 16.25, y + 12.5),
                                  box(x0 + 16.0, y - 7.6, x0 + 22.0, y + 7.6)]), 1.0)
     return dict(board=board, module=(x0 + 8.04, y),
@@ -239,92 +257,138 @@ def pim_z():
 def outlines(side="left"):
     pcb = pcb_outline()
     # cavity runs straight down so the PCB with soldered switches slides in from below
-    tops = unary_union([affinity.rotate(rect(x, y, P["switch_top"], P["switch_top"]), -r, origin=(x, y))
-                        for x, y, r in keys()])
+    tops = unary_union([key_rect(x, y, r, P["switch_top"]) for x, y, r in keys()])
     inner = off(off(off(pcb.union(tops), P["clr"]), 3.0), -3.0)  # close: fill the small steps
     outer = round2d(off(inner, P["wall"] + P["tuck_in"]), P["corner_r"])
     skin = outer
-    if side == "right":  # the PIM447 is wider than the controller column: bulge the edge
-        xb = pim()["board"].bounds[2] + P["pim_clr"] + P["hump_wall"]
-        b = box(P["hump_x"][0], -P["hump_y"][1] - 6, xb, -P["hump_y"][0])
-        skin = round2d(outer.union(b), P["corner_r"])
     x0, x1 = P["hump_x"]; y0, y1 = P["hump_y"]; hr = P["hump_r"]
+    if side == "right":  # the PIM447 is wider than the controller column: bulge the side edge
+        xb = pim()["board"].bounds[2] + P["pim_clr"] + P["hump_wall"]
+        top = outer.intersection(box(x1 - 5, -y1, x1, 0)).bounds[3]  # leave the USB edge alone
+        skin = round2d(outer.union(box(x0, -y1 - 6, xb, top)), P["corner_r"])
     hump = off(box(x0 + hr, -y1 + hr, x1 + 30, -y0 - hr), hr).intersection(skin)
     return pcb, inner, outer, skin, round2d(hump, 3.0)
 
 
+def hump_parts(side="left"):
+    """what sits under the hump, at real sizes, as (outline, z0, z1)"""
+    (nx, ny), (nw, nl, nt) = P["nano"], P["nano_size"]
+    tx0, tx1, ty0, ty1, th = P["trrs"]
+    rw, rl, rh = P["reset_sw"]
+    out = [(rect(nx, -ny, nw, nl), P["nano_z"], P["nano_z"] + nt),
+           (box(tx0, -ty1, tx1, -ty0), 0.0, th),
+           (rect(*xy(*P["reset"]), rw, rl), 0.0, rh)]
+    if side == "left":
+        ox, oy, ow, oh = P["oled"]
+        out.append((rect(ox, -oy, ow, oh), P["oled_z"], P["oled_z"] + 1.6))
+    return out
+
+
+def internals(side="left"):
+    """the PCB and everything soldered to it, as (outline, z0, z1)"""
+    out = [(pcb_outline(), Z_PCB_BOT, 0.0)]
+    for x, y, r in keys():
+        out.append((key_rect(x, y, r, P["switch_body"]), 0.0, P["plate_z"]))
+        out.append((key_rect(x, y, r, P["switch_top"]), P["plate_z"], P["switch_h"]))
+    return out + hump_parts(side)
+
+
+def check_fit(shell, side):
+    """the PCB with everything on it has to slide straight in from below"""
+    swept = union([slab(p, Z_BOT - 1, z1) for p, _, z1 in internals(side)])
+    v = (shell ^ swept).volume()
+    assert v < 0.01, f"{side}: PCB assembly hits the shell on the way in ({v:.2f} mm3)"
+
+
 def build(side="left"):
     pcb, inner, outer, skin, hp = outlines(side)
-    shell = loft(skin, tuck(16)[:-1] + round_over(Z_DECK - P["top_r"], Z_DECK, P["top_r"], 12))
-    rt = P["hump_top"] - P["hump_top_r"]
-    shell += loft(hp, [(0.0, 0.0)] + round_over(rt, P["hump_top"], P["hump_top_r"], 12))
-
-    cav = [slab(inner, Z_BOT - 0.01, P["plate_z"])]
+    hc = off(hp, -P["hump_wall"])
     if side == "left":
-        cav.append(slab(off(hp, -P["hump_wall"]).intersection(inner), 0.0, P["hump_top"] - P["hump_wall"]))
-    for x, y, r in keys():
-        cav.append(cube(x, y, 5, P["key_hole"], P["key_hole"], 20, -r))
-    ux, uz, uw, uh = P["usb"]
-    usb = Manifold.extrude(cs(rect(0, 0, uw, uh, 2.0)), 12).rotate((90, 0, 0))
-    cav.append(usb.translate((ux, -60.0, uz)))
-    cav.append(cyl(*xy(*P["reset"]), 0, 30, P["reset_hole"]))
-    if side == "left":
-        cx, cy, w, h = P["oled_win"]
-        cav.append(slab(rect(cx, -cy, w, h, 1.0), 0, 30))
-    else:
-        g = pim(); zb, ztop = pim_z()
-        cav.append(slab(off(hp, -P["hump_wall"]), 0.0, ztop - P["pim_recess"]))
-        cav.append(slab(off(g["board"], P["pim_clr"]), ztop - P["pim_recess"] - 0.01, ztop))
-        cav.append(slab(rect(*g["module"], 14.65, 14.65, 1.0), ztop - 0.01, 30))
-        cav += [cyl(x, y, ztop - 0.01, P["hump_top"] - 0.4, P["pim_pilot_d"]) for x, y in g["holes"]]
-    shell -= union(cav)
-    # nut bosses under the deck: nothing shows on top
-    sb = P["switch_bot"]
-    bots = union([cube(x, y, 1, sb, sb, 2.2, -r) for x, y, r in keys()])
-    shell += union([cyl(*xy(x, y), 0, P["plate_z"] + 0.01, P["boss_d"]) for x, y in P["screws"]]) - bots
+        hc = hc.intersection(inner)
+    g = pim(); zb, ztop = pim_z()
+    roof = P["hump_top"] - P["hump_wall"] if side == "left" else ztop - P["pim_recess"]  # underside
     tip = Z_BOT + P["head_sink"] + P["screw_len"]
-    nr = (P["nut_af"] / 2 + P["nut_tol"]) / math.cos(math.pi / 6)
-    hexp = lambda x, y: Polygon([(x + nr * math.cos(a), y + nr * math.sin(a)) for a in np.arange(6) * math.pi / 3])
-    shell -= union([slab(hexp(*xy(x, y)), -0.1, P["nut_t"] + 0.1) for x, y in P["screws"]]
-                   + [cyl(*xy(x, y), -0.1, tip + 0.1, P["clear_d"]) for x, y in P["screws"]])
-
-    # floor
-    opening = inner
-    floor = slab(off(opening, -P["floor_tol"]), Z_BOT, Z_FLOOR)
-    floor += union([cyl(*xy(x, y), Z_FLOOR - 0.01, Z_PCB_BOT, P["standoff_d"]) for x, y in P["screws"]])
+    rxy = xy(*P["reset"])
+    sd, fd, ft, sink = P["reset_pin"]
     bw, bl, bt = P["battery"]; bx, by = P["battery_at"]
     bat = rect(bx, -by, bl + 0.8, bw + 0.8)
-    corners = unary_union([Point(c).buffer(7, cap_style="square") for c in bat.exterior.coords[:4]])
-    floor += slab(off(bat, 1.2).difference(bat).intersection(corners), Z_FLOOR - 0.01, Z_FLOOR + 2.5)
-    holes = [cyl(*xy(x, y), Z_BOT - 1, 40, P["clear_d"]) for x, y in P["screws"]]
-    ch = (P["csk_d"] - P["clear_d"]) / 2  # 90 deg countersink depth
-    zh = Z_BOT + P["head_sink"]
-    holes += [cyl(*xy(x, y), Z_BOT - 1, zh, P["csk_d"] + 0.2) for x, y in P["screws"]]
-    holes += [Manifold.cylinder(ch + 0.1, P["csk_d"] / 2 + 0.1, P["clear_d"] / 2).translate((*xy(x, y), zh - 0.01))
-              for x, y in P["screws"]]
     mx, my, od, idd, dep = P["magsafe"]
-    ringp = Point(mx, -my).buffer(od / 2, 64).difference(Point(mx, -my).buffer(idd / 2, 64))
-    holes.append(slab(ringp, Z_BOT - 1, Z_BOT + dep))
-    floor -= union(holes)
 
     # sanity checks
-    tip = Z_BOT + P["head_sink"] + P["screw_len"]
-    assert P["nut_t"] + 0.4 < tip < Z_DECK - 0.5, f"screw tip {tip:.1f} misses nut or shows through deck"
+    pilot_z = tip + P["pilot_extra"]  # blind end
+    assert 2.0 < tip and pilot_z < Z_DECK - 0.4, f"screw tip {tip:.1f}: too little thread or shows through deck"
     assert off(skin, -P["tuck_in"]).contains(off(inner, P["wall"] - 0.2)), "bottom edge wall too thin"
-    sd, fd, ft, sink = P["reset_pin"]
-    roof = P["hump_top"] - P["hump_wall"] if side == "left" else pim_z()[1] - P["pim_recess"]
-    assert P["reset_sw_h"] + ft < roof - 0.5, "reset pin flange above roof underside"
-    assert Point(*xy(*P["reset"])).buffer(fd / 2 + 0.2).within(off(hp, -P["hump_wall"]).intersection(inner)), "reset pin flange hits wall"
+    assert P["hump_wall"] >= P["wall"], "bulge wall thinner than the bottom edge"
+    assert P["reset_sw"][2] + ft < roof - 0.5, "reset pin flange above roof underside"
+    assert Point(rxy).buffer(fd / 2 + 0.2).within(hc.intersection(inner)), "reset pin flange hits wall"
     assert sd + 0.3 <= P["reset_hole"] < fd - 0.6, "reset pin vs hole"
+    for p, z0, z1 in hump_parts(side):
+        assert z1 < roof - 0.3 and hc.contains(off(p, 0.3)), f"{side}: part at {p.centroid.coords[0]} outside hump"
+    assert min(cap_rect(*k).distance(hp) for k in keys()) > 0.5, "keycap rubs the hump"
     if side == "right":
-        assert off(hp, -P["hump_wall"]).contains(off(pim()["board"], P["pim_clr"])), "PIM447 outside hump"
-        assert Point(*xy(*P["reset"])).distance(pim()["board"]) > P["reset_hole"] / 2 + 0.5, "PIM447 over reset"
-    assert off(opening, -1).contains(off(bat, 1.2)), "battery bay outside floor"
-    assert off(opening, -1.5).contains(Point(mx, -my).buffer(od / 2)), "MagSafe ring off the floor"
+        assert hc.contains(off(g["board"], P["pim_clr"])), "PIM447 outside hump"
+        assert Point(rxy).distance(g["board"]) > P["reset_hole"] / 2 + 0.5, "PIM447 over reset"
+    assert off(inner, -1).contains(off(bat, 1.2)), "battery bay outside floor"
+    assert off(inner, -1.5).contains(Point(mx, -my).buffer(od / 2)), "MagSafe ring off the floor"
     for x, y in P["screws"]:
         assert Point(x, -y).distance(bat) > P["standoff_d"] / 2 + 0.5, f"standoff {x},{y} hits battery"
         d = Point(mx, -my).distance(Point(x, -y))
         assert not (idd / 2 - P["csk_d"] / 2 - 0.5 < d < od / 2 + P["csk_d"] / 2 + 0.5), f"screw {x},{y} on ring"
+
+    shell = loft(skin, tuck(16)[:-1] + round_over(Z_DECK - P["top_r"], Z_DECK, P["top_r"], 12))
+    rt = P["hump_top"] - P["hump_top_r"]
+    shell += loft(hp, [(0.0, 0.0)] + round_over(rt, P["hump_top"], P["hump_top_r"], 12))
+
+    kh = P["key_hole"]
+    holes = union([cube(x, y, 5, kh, kh, 20, r) for x, y, r in keys()])
+    cav = [slab(inner, Z_BOT - 0.01, P["plate_z"]), holes, slab(hc, 0.0, roof)]
+    if side == "right":  # bulge: carry the hump wall down at constant thickness (no crevice to
+        zt = Z_BOT + tuck_h()  # trap supports), following the under-curve at the bottom
+        cav.append(slab(hc, zt, 0.01))
+        zs = np.linspace(Z_BOT - 0.01, zt, 17)
+        cav += [slab(off(skin, -P["hump_wall"] - tuck_inset(b)).intersection(hc), a, b + 0.01)
+                for a, b in zip(zs[:-1], zs[1:])]
+    uw, uh = P["usb"]
+    usb = Manifold.extrude(cs(rect(0, 0, uw, uh, 2.0)), 12).rotate((90, 0, 0))
+    uz = P["nano_z"] + P["nano_size"][2] / 2  # mid-mount USB-C: centred on the board
+    cav.append(usb.translate((P["nano"][0], -P["hump_y"][0], uz)))
+    reset_hole = cyl(*rxy, 0, 30, P["reset_hole"])
+    cav.append(reset_hole)
+    if side == "left":
+        cx, cy, w, h = P["oled_win"]
+        cav.append(slab(rect(cx, -cy, w, h, 0.5), 0, 30))
+    else:  # recess = the board's bounding box, so it seats whatever the tab's real shape
+        cav.append(slab(off(box(*g["board"].bounds), P["pim_clr"]), roof - 0.01, ztop))
+        cav.append(slab(rect(*g["module"], P["pim_hole"], P["pim_hole"], 0.3), ztop - 0.01, 30))
+        cav += [cyl(x, y, ztop - 0.01, P["hump_top"] - 0.4, P["pim_pilot_d"]) for x, y in g["holes"]]
+    shell -= union(cav)
+    if side == "left":  # guide under the thin roof so the loose pin can't tilt off the switch
+        ox, oy, ow, oh = P["oled"]
+        guide = cyl(*rxy, P["reset_sw"][2] + ft + 1.0, roof + 0.01, P["reset_hole"] + 2.4)
+        shell += guide - slab(rect(ox, -oy, ow + 1.2, oh + 1.2), 0, 30) - reset_hole
+    # bosses under the deck clamp the PCB against the floor standoffs; the screws thread
+    # into them and nothing shows on top
+    shell += union([cyl(*xy(x, y), 0, P["plate_z"] + 0.01, P["boss_d"]) for x, y in P["screws"]]) - holes
+    shell -= union([cyl(*xy(x, y), -0.1, pilot_z, P["pilot_d"]) for x, y in P["screws"]])
+    check_fit(shell, side)
+
+    # floor
+    opening = inner
+    if side == "right":
+        opening = inner.union(off(skin, -P["hump_wall"] - P["tuck_in"]).intersection(hc))
+    floor = slab(off(opening, -P["floor_tol"]), Z_BOT, Z_FLOOR)
+    floor += union([cyl(*xy(x, y), Z_FLOOR - 0.01, Z_PCB_BOT, P["standoff_d"]) for x, y in P["screws"]])
+    corners = unary_union([Point(c).buffer(7, cap_style="square") for c in bat.exterior.coords[:4]])
+    floor += slab(off(bat, 1.2).difference(bat).intersection(corners), Z_FLOOR - 0.01, Z_FLOOR + 2.5)
+    cuts = [cyl(*xy(x, y), Z_BOT - 1, 40, P["clear_d"]) for x, y in P["screws"]]
+    ch = (P["csk_d"] - P["clear_d"]) / 2  # 90 deg countersink depth
+    zh = Z_BOT + P["head_sink"]
+    cuts += [cyl(*xy(x, y), Z_BOT - 1, zh, P["csk_d"] + 0.2) for x, y in P["screws"]]
+    cuts += [Manifold.cylinder(ch + 0.1, P["csk_d"] / 2 + 0.1, P["clear_d"] / 2).translate((*xy(x, y), zh - 0.01))
+             for x, y in P["screws"]]
+    ringp = Point(mx, -my).buffer(od / 2, 64).difference(Point(mx, -my).buffer(idd / 2, 64))
+    cuts.append(slab(ringp, Z_BOT - 1, Z_BOT + dep))
+    floor -= union(cuts)
 
     if side == "right":
         shell, floor = shell.mirror((1, 0, 0)), floor.mirror((1, 0, 0))
@@ -333,16 +397,13 @@ def build(side="left"):
 
 def proxies(side="left"):
     """non-printed parts for renders: PCB, switches + keycaps, nano, OLED/PIM447, battery"""
-    pcb = slab(pcb_outline(), Z_PCB_BOT, 0)
-    cap = Manifold.extrude(cs(rect(0, 0, 17.5, 16.5, 1.2)), 2.6)
-    caps = union([cap.rotate((0, 0, -r)).translate((x, y, 6.8)) for x, y, r in keys()])
-    misc = [cube(x, y, Z_DECK + 1.2, 15, 15, 2.4, -r) for x, y, r in keys()]
-    misc.append(cube(*xy(*P["nano"]), P["nano_z"] + 0.5, 18, 33, 1.0))
+    (pcb, z0, z1), *parts = internals(side)
+    pcb = slab(pcb, z0, z1)
+    caps = union([slab(off(off(cap_rect(*k), -1.2), 1.2), 6.8, 9.4) for k in keys()])
+    misc = [slab(p, z0, z1) for p, z0, z1 in parts]
     bw, bl, bt = P["battery"]
     misc.append(slab(rect(P["battery_at"][0], -P["battery_at"][1], bl, bw, 1.5), Z_FLOOR, Z_FLOOR + bt))
-    if side == "left":
-        misc.append(cube(185.1, -87.6, 9.2, 12, 38, 1.6))
-    else:  # PIM447: module height is estimated (listed 9.5 mm overall)
+    if side == "right":  # PIM447: module height is estimated (listed 9.5 mm overall)
         g = pim(); zb, ztop = pim_z()
         board = slab(g["board"], zb, ztop) - union([cyl(x, y, zb - 1, ztop + 1, 2.5) for x, y in g["holes"]])
         mx, my = g["module"]
@@ -350,7 +411,7 @@ def proxies(side="left"):
                  Manifold.sphere(3.5, 48).translate((mx, my, ztop + 6.0 + 0.9))]
         misc += [cyl(x, y, zb - 1.3, ztop, 1.8) + cyl(x, y, zb - 1.3, zb, 3.8) for x, y in g["holes"]]  # M2 screws
         misc += [cyl(x, y, 3.8, zb, 0.6) for x, y in g["pins"]]  # wires
-    misc.append(reset_pin().translate((*xy(*P["reset"]), P["reset_sw_h"])))
+    misc.append(reset_pin().translate((*xy(*P["reset"]), P["reset_sw"][2])))
     out = dict(pcb=pcb, caps=caps, misc=union(misc))
     return {k: v.mirror((1, 0, 0)) for k, v in out.items()} if side == "right" else out
 
@@ -358,7 +419,7 @@ def proxies(side="left"):
 def reset_pin():
     """pin standing on its flange at the origin, length so its top sits just under the hump surface"""
     sd, fd, ft, sink = P["reset_pin"]
-    h = P["hump_top"] - sink - P["reset_sw_h"]
+    h = P["hump_top"] - sink - P["reset_sw"][2]
     return cyl(0, 0, 0, ft, fd) + cyl(0, 0, 0, h, sd)
 
 
@@ -388,7 +449,7 @@ if __name__ == "__main__":
         write_stl(shell, models / f"{side}_shell.stl")
         write_stl(floor, models / f"{side}_floor.stl")
         parts = dict(shell=shell, floor=floor, **proxies(side))
-        cut = -(87.6 if side == "left" else P["pim_at"][1])  # through the OLED / trackball
+        cut = -(P["oled"][1] if side == "left" else P["pim_ky"])  # through the OLED / trackball
         for name, part in parts.items():
             if name not in ("shell", "floor"):
                 write_stl(part, preview / f"{side}_{name}.stl")
