@@ -318,6 +318,7 @@ def build(side="left"):
     pilot_z = tip + P["pilot_extra"]  # blind end
     assert 2.0 < tip and pilot_z < Z_DECK - 0.4, f"screw tip {tip:.1f}: too little thread or shows through deck"
     assert off(skin, -P["tuck_in"]).contains(off(inner, P["wall"] - 0.2)), "bottom edge wall too thin"
+    assert P["hump_wall"] >= P["wall"], "bulge wall thinner than the bottom edge"
     assert P["reset_sw"][2] + ft < roof - 0.5, "reset pin flange above roof underside"
     assert Point(rxy).buffer(fd / 2 + 0.2).within(hc.intersection(inner)), "reset pin flange hits wall"
     assert sd + 0.3 <= P["reset_hole"] < fd - 0.6, "reset pin vs hole"
@@ -341,6 +342,12 @@ def build(side="left"):
     kh = P["key_hole"]
     holes = union([cube(x, y, 5, kh, kh, 20, r) for x, y, r in keys()])
     cav = [slab(inner, Z_BOT - 0.01, P["plate_z"]), holes, slab(hc, 0.0, roof)]
+    if side == "right":  # bulge: carry the hump wall down at constant thickness (no crevice to
+        zt = Z_BOT + tuck_h()  # trap supports), following the under-curve at the bottom
+        cav.append(slab(hc, zt, 0.01))
+        zs = np.linspace(Z_BOT - 0.01, zt, 17)
+        cav += [slab(off(skin, -P["hump_wall"] - tuck_inset(b)).intersection(hc), a, b + 0.01)
+                for a, b in zip(zs[:-1], zs[1:])]
     uw, uh = P["usb"]
     usb = Manifold.extrude(cs(rect(0, 0, uw, uh, 2.0)), 12).rotate((90, 0, 0))
     uz = P["nano_z"] + P["nano_size"][2] / 2  # mid-mount USB-C: centred on the board
@@ -366,7 +373,10 @@ def build(side="left"):
     check_fit(shell, side)
 
     # floor
-    floor = slab(off(inner, -P["floor_tol"]), Z_BOT, Z_FLOOR)
+    opening = inner
+    if side == "right":
+        opening = inner.union(off(skin, -P["hump_wall"] - P["tuck_in"]).intersection(hc))
+    floor = slab(off(opening, -P["floor_tol"]), Z_BOT, Z_FLOOR)
     floor += union([cyl(*xy(x, y), Z_FLOOR - 0.01, Z_PCB_BOT, P["standoff_d"]) for x, y in P["screws"]])
     corners = unary_union([Point(c).buffer(7, cap_style="square") for c in bat.exterior.coords[:4]])
     floor += slab(off(bat, 1.2).difference(bat).intersection(corners), Z_FLOOR - 0.01, Z_FLOOR + 2.5)
