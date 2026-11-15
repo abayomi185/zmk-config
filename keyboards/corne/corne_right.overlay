@@ -1,18 +1,22 @@
-#include "trackball.dtsi"
+#include "trackpad.dtsi"
 
-// No OLED on this half; the bus is shared with the trackball.
+// No OLED on this half; the bus is shared with the trackpad.
 &oled {
     status = "disabled";
 };
 
+// Cirque TM040040 40 mm, R1 removed for I2C. The driver needs DR (trackpad FFC
+// pin 4), which the Keycapsss adapter doesn't break out: bodge it to D9.
 &pro_micro_i2c {
-    trackball: trackball@a {
-        compatible = "pimoroni,pim447";
-        reg = <0xa>;
-        int-gpios = <&pro_micro 9 GPIO_ACTIVE_LOW>;
+    trackpad: trackpad@2a {
+        compatible = "cirque,pinnacle";
+        reg = <0x2a>;
+        data-ready-gpios = <&pro_micro 9 GPIO_ACTIVE_HIGH>;
+        primary-tap-enable; // tap to left click
+        sleep-mode-enable;  // ~40 uA after 5 s untouched; the next touch wakes it with a short lag
     };
 };
 
-&trackball_split {
-    device = <&trackball>;
+&trackpad_split {
+    device = <&trackpad>;
 };
