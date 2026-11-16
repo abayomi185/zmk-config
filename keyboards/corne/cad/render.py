@@ -123,10 +123,10 @@ for side in ("left", "right"):
     shoot(f"{side}_bottom", 20, -45, 420)
     reset(); add_half(side, explode=14); lights_and_floor()
     shoot(f"{side}_exploded", -30 if side == "left" else 30, 25, 520)
-    # section through the OLED / trackball (ky = KiCad y of its centre)
+    # section through the OLED / TrackPoint (ky = KiCad y of its centre)
     reset(); objs, c = add_half(side, sec=True); lights_and_floor()
     hx = (1 if side == "left" else -1) * 58
-    shoot(f"{side}_section", 15 if side == "left" else -15, 10, 170, target=(hx, -(87.6 if side == "left" else 91.5) - c.y, 2))
+    shoot(f"{side}_section", 15 if side == "left" else -15, 10, 170, target=(hx, -(87.6 if side == "left" else 86.25) - c.y, 2))
 
 reset(); add_half("left", dx=-85); add_half("right", dx=85); lights_and_floor()
 shoot("pair", 0, 38, 640)
