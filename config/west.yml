@@ -4,6 +4,8 @@ manifest:
       url-base: https://github.com/zmkfirmware
     - name: abayomi185
       url-base: https://github.com/abayomi185
+    - name: badjeff
+      url-base: https://github.com/badjeff
   projects:
     - name: zmk
       remote: abayomi185
@@ -32,5 +34,8 @@ manifest:
           - openthread
           - edtt
           - trusted-firmware-m
+    - name: kb_zmk_ps2_mouse_trackpoint_driver
+      remote: badjeff
+      revision: 5ff0b24863ab74390adcc447b0575fcd78442514 # PS/2 driver, Zephyr 4.1 fork of infused-kim's
   self:
     path: config

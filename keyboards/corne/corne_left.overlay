@@ -1,5 +1,5 @@
-#include "trackpad.dtsi"
+#include "trackpoint.dtsi"
 
-&trackpad_listener {
+&trackpoint_listener {
     status = "okay";
 };
