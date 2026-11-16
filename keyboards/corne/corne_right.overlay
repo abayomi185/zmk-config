@@ -1,22 +1,58 @@
-#include "trackpad.dtsi"
+#include <dt-bindings/zmk/input_transform.h>
+#include <input/processors.dtsi>
+#include "trackpoint.dtsi"
 
-// No OLED on this half; the bus is shared with the trackpad.
+// No OLED on this half, and the TrackPoint uses its SDA/SCL pins.
 &oled {
     status = "disabled";
 };
 
-// Cirque TM040040 40 mm, R1 removed for I2C. The driver needs DR (trackpad FFC
-// pin 4), which the Keycapsss adapter doesn't break out: bodge it to D9.
 &pro_micro_i2c {
-    trackpad: trackpad@2a {
-        compatible = "cirque,pinnacle";
-        reg = <0x2a>;
-        data-ready-gpios = <&pro_micro 9 GPIO_ACTIVE_HIGH>;
-        primary-tap-enable; // tap to left click
-        sleep-mode-enable;  // ~40 uA after 5 s untouched; the next touch wakes it with a short lag
+    status = "disabled";
+};
+
+// holykeebs TrackPoint module (Sprintek SK8707-01-004, 3.3 V, PS/2), soldered on top
+// of the nice!nano: DATA on SDA (D2), CLK on SCL (D3). RST isn't wired; the sensor
+// resets itself on power-up. PS/2 runs on UART0 for reliable timing; TX goes to an
+// unexposed pin. The lines need pull-ups and the module has none, so use the nRF's.
+&pinctrl {
+    uart0_ps2_default: uart0_ps2_default {
+        group1 {
+            psels = <NRF_PSEL(UART_TX, 0, 27)>, <NRF_PSEL(UART_RX, 0, 17)>;
+            bias-pull-up;
+        };
+    };
+    uart0_ps2_off: uart0_ps2_off {
+        group1 {
+            psels = <NRF_PSEL(UART_TX, 0, 27)>, <NRF_PSEL(UART_RX, 0, 28)>;
+        };
     };
 };
 
-&trackpad_split {
-    device = <&trackpad>;
+&uart0 {
+    status = "okay";
+    compatible = "nordic,nrf-uarte";
+    current-speed = <14400>;
+    pinctrl-0 = <&uart0_ps2_default>;
+    pinctrl-1 = <&uart0_ps2_off>;
+    pinctrl-names = "default", "sleep";
+
+    uart_ps2: uart_ps2 {
+        compatible = "uart-ps2";
+        scl-gpios = <&pro_micro 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        sda-gpios = <&pro_micro 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+    };
+};
+
+/ {
+    trackpoint: trackpoint {
+        compatible = "zmk,input-mouse-ps2";
+        ps2-device = <&uart_ps2>;
+    };
+};
+
+// X is mirrored as mounted; holykeebs' QMK firmware inverts it too.
+&trackpoint_split {
+    device = <&trackpoint>;
+    input-processors = <&zip_xy_transform INPUT_TRANSFORM_X_INVERT>;
 };
