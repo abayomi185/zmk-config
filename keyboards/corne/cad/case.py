@@ -51,7 +51,8 @@ P = dict(
     nano=(185.80, 85.74), nano_size=(18.0, 33.0, 1.6),
     nano_z=2.5,         # board underside above PCB
     hump_x=(174.5, 194.75), hump_y=(60.0, 121.8),
-    hump_top=12.4, hump_wall=1.6, hump_r=5.0, hump_top_r=2.5,
+    hump_top=dict(left=12.4, right=11.2),  # left: OLED; right: low enough for the TrackPoint cap to stand proud
+    hump_wall=1.6, hump_r=5.0, hump_top_r=2.5,
     oled=(185.1, 87.6, 12.0, 38.0), oled_z=8.4,  # cx, cy, w, h; module underside above PCB (estimated)
     oled_win=(185.1, 87.85, 12.4, 32.8),  # cx, cy, w, h: the module less its header, as in the Fusion case
     trrs=(182.7, 194.7, 111.9, 119.7, 5.0),  # x0, x1, ky0, ky1, h: MJ-4PP-9, both sides' footprints
@@ -61,10 +62,12 @@ P = dict(
     reset_pin=(2.8, 4.2, 0.8, 0.3),  # stem d, flange d, flange t, top below hump surface
     usb=(13.5, 8.0),    # w, h; centred on the nano's mid-mount USB-C. The plug overmold (12.35 x 6.5
                         # at most by the spec) has to pass ~4 mm through it to seat
-    # holykeebs TrackPoint module (Sprintek SK8707) stacked on the right nano: driver + adapter
-    # boards on the nano's header pins, sensor on top, stick up through the hump roof
+    # holykeebs TrackPoint module (Sprintek SK8707-01-004) on the right nano: header pins come up
+    # through the nano, a header spacer on top holds the adapter PCB above it with the driver
+    # board in the gap, and the sensor is soldered flat on the adapter (holykeebs guide)
     tp_at=(185.75, 86.25),  # stick, KiCad coords (roughly central on the nano: estimated)
-    tp_sensor=(13.8, 18.3, 0.8), tp_sensor_z=8.5,  # sensor PCB w, l, t; underside above PCB (estimated)
+    tp_sensor=(13.8, 18.29, 0.8),  # sensor PCB w, l, t; 2.4 mm square stick (datasheet DS0048)
+    tp_gap=2.5, tp_adapter_t=1.6,  # header spacer nano -> adapter, adapter PCB (estimated)
     tp_cap=(8.0, 4.5),  # red cap d, top above the sensor PCB (estimated)
     tp_hole_clr=1.5,    # roof hole = cap + this, so the cap can tilt
     screws=[(79.5, 86.75), (79.5, 105.5), (122.75, 122.75), (169.25, 130.5), (155.5, 83.0)],
@@ -240,6 +243,11 @@ def tuck_h():
 
 
 # ---- parts ------------------------------------------------------------------
+def tp_z():
+    """TrackPoint sensor PCB underside above the keyboard PCB"""
+    return P["nano_z"] + P["nano_size"][2] + P["tp_gap"] + P["tp_adapter_t"]
+
+
 def feet(side="left"):
     return [xy(x, y) for x, y in P["feet"][side]]
 
@@ -268,7 +276,7 @@ def hump_parts(side="left"):
         ox, oy, ow, oh = P["oled"]
         out.append((rect(ox, -oy, ow, oh), P["oled_z"], P["oled_z"] + 1.6))
     else:  # TrackPoint: driver + adapter between the nano and the sensor (the stick goes up the hole)
-        sw, sl, st = P["tp_sensor"]; z = P["tp_sensor_z"]
+        sw, sl, st = P["tp_sensor"]; z = tp_z()
         out += [(rect(nx, -ny, nw, nl), P["nano_z"] + nt, z),
                 (rect(*xy(*P["tp_at"]), sw, sl), z, z + st)]
     return out
@@ -293,7 +301,8 @@ def check_fit(shell, side):
 def build(side="left"):
     pcb, inner, outer, skin, hp = outlines(side)
     hc = off(hp, -P["hump_wall"]).intersection(inner)
-    roof = P["hump_top"] - P["hump_wall"]  # underside
+    top = P["hump_top"][side]
+    roof = top - P["hump_wall"]  # underside
     tip = Z_BOT + P["head_sink"] + P["screw_len"]
     rxy = xy(*P["reset"])
     sd, fd, ft, sink = P["reset_pin"]
@@ -315,7 +324,7 @@ def build(side="left"):
         tp = Point(xy(*P["tp_at"])); hole_d = P["tp_cap"][0] + P["tp_hole_clr"]
         assert tp.buffer(hole_d / 2 + 0.5).within(off(hp, -P["hump_top_r"])), "stick hole runs into the roof edge"
         assert tp.distance(Point(rxy)) > (hole_d + P["reset_hole"]) / 2 + 2.0, "stick hole too near the reset hole"
-        assert P["tp_sensor_z"] + P["tp_sensor"][2] + P["tp_cap"][1] > P["hump_top"] + 0.5, "cap below the roof"
+        assert tp_z() + P["tp_sensor"][2] + P["tp_cap"][1] > top + 2.0, "cap barely stands proud of the roof"
     fd_, fdep, fclr = P["foot"]
     for f in feet(side):
         c = Point(f).buffer(fd_ / 2 + fclr)
@@ -332,8 +341,7 @@ def build(side="left"):
         assert not (idd / 2 - P["csk_d"] / 2 - 0.5 < d < od / 2 + P["csk_d"] / 2 + 0.5), f"screw {x},{y} on ring"
 
     shell = loft(skin, tuck(16)[:-1] + round_over(Z_DECK - P["top_r"], Z_DECK, P["top_r"], 12))
-    rt = P["hump_top"] - P["hump_top_r"]
-    shell += loft(hp, [(0.0, 0.0)] + round_over(rt, P["hump_top"], P["hump_top_r"], 12))
+    shell += loft(hp, [(0.0, 0.0)] + round_over(top - P["hump_top_r"], top, P["hump_top_r"], 12))
 
     kh = P["key_hole"]
     holes = union([cube(x, y, 5, kh, kh, 20, r) for x, y, r in keys()])
@@ -392,19 +400,19 @@ def proxies(side="left"):
     bw, bl, bt = P["battery"]
     misc.append(slab(rect(P["battery_at"][0], -P["battery_at"][1], bl, bw, 1.5), Z_FLOOR, Z_FLOOR + bt))
     if side == "right":  # TrackPoint cap (size estimated)
-        st = P["tp_sensor_z"] + P["tp_sensor"][2]
+        st = tp_z() + P["tp_sensor"][2]
         misc.append(cyl(*xy(*P["tp_at"]), st + 1.0, st + P["tp_cap"][1], P["tp_cap"][0]))
     fd_, fdep, _ = P["foot"]
     misc += [cyl(*f, Z_BOT + fdep - 2.8, Z_BOT + fdep, fd_) for f in feet(side)]
-    misc.append(reset_pin().translate((*xy(*P["reset"]), P["reset_sw"][2])))
+    misc.append(reset_pin(side).translate((*xy(*P["reset"]), P["reset_sw"][2])))
     out = dict(pcb=pcb, caps=caps, misc=union(misc))
     return {k: v.mirror((1, 0, 0)) for k, v in out.items()} if side == "right" else out
 
 
-def reset_pin():
+def reset_pin(side):
     """pin standing on its flange at the origin, length so its top sits just under the hump surface"""
     sd, fd, ft, sink = P["reset_pin"]
-    h = P["hump_top"] - sink - P["reset_sw"][2]
+    h = P["hump_top"][side] - sink - P["reset_sw"][2]
     return cyl(0, 0, 0, ft, fd) + cyl(0, 0, 0, h, sd)
 
 
@@ -426,10 +434,10 @@ if __name__ == "__main__":
     import sys
     models = HERE / "models"; models.mkdir(exist_ok=True)
     preview = HERE / ".preview"; preview.mkdir(exist_ok=True)
-    print(f"Z: bottom {Z_BOT:.1f}  floor top {Z_FLOOR:.1f}  PCB 0  deck {Z_DECK:.1f}  hump {P['hump_top']:.1f}\n"
-          f"height: keys {Z_DECK - Z_BOT:.1f}  hump {P['hump_top'] - Z_BOT:.1f}  PCB top above desk {-Z_BOT:.1f}")
-    write_stl(reset_pin(), models / "reset_pin.stl")  # print 2, standing on the flange
+    print(f"Z: bottom {Z_BOT:.1f}  floor top {Z_FLOOR:.1f}  PCB 0  deck {Z_DECK:.1f}  hump {P['hump_top']}\n"
+          f"height: keys {Z_DECK - Z_BOT:.1f}  PCB top above desk {-Z_BOT:.1f}")
     for side in sys.argv[1:] or ["left", "right"]:
+        write_stl(reset_pin(side), models / f"{side}_reset_pin.stl")  # stand it on the flange
         shell, floor = build(side)
         write_stl(shell, models / f"{side}_shell.stl")
         write_stl(floor, models / f"{side}_floor.stl")
