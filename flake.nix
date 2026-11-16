@@ -19,7 +19,7 @@
       src = nixpkgs.lib.sourceFilesBySuffices self [ ".conf" ".keymap" ".yml" ".overlay" ".dtsi" ];
 
       # Update whenever config/west.yml changes; the build prints the new hash on a mismatch.
-      zephyrDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+      zephyrDepsHash = "sha256-GYAbU2Eo3LHe7Lm7sCwT+GmKMtKhFlC8W53DcDzUN2U=";
 
       # Shared so each keyboard doesn't download its own copy.
       westDeps = fetchZephyrDeps {
