@@ -74,6 +74,12 @@ P = dict(
     pilot_extra=0.5,    # pilot depth past the screw tip: 3.5-4 mm heads seat up to 0.35 deeper
     boss_d=6.6, standoff_d=6.0,  # standoff: the socket of key (165, 74.75) is 3.5 from the screw
     magsafe=(141.0, 96.0, 56.5, 45.5, 0.6),  # cx, cy, OD, ID, depth
+    # 3M SJ5376 bumpons (8 x 2.8) in shallow recesses, staggered between the halves so they
+    # nest when stacked back to back (both in left-half coords: flipped over, the right half
+    # lines up with the left)
+    foot=(8.0, 0.6, 0.3),  # d, recess depth, clearance
+    feet=dict(left=[(67.0, 74.0), (67.0, 118.0), (188.0, 74.0), (176.0, 143.0)],
+              right=[(78.0, 74.0), (78.0, 118.0), (188.0, 84.0), (163.0, 137.0)]),
 )
 
 Z_DECK = P["plate_z"] + P["deck_t"]
@@ -234,6 +240,10 @@ def tuck_h():
 
 
 # ---- parts ------------------------------------------------------------------
+def feet(side="left"):
+    return [xy(x, y) for x, y in P["feet"][side]]
+
+
 def outlines(side="left"):
     pcb = pcb_outline()
     # cavity runs straight down so the PCB with soldered switches slides in from below
@@ -306,6 +316,14 @@ def build(side="left"):
         assert tp.buffer(hole_d / 2 + 0.5).within(off(hp, -P["hump_top_r"])), "stick hole runs into the roof edge"
         assert tp.distance(Point(rxy)) > (hole_d + P["reset_hole"]) / 2 + 2.0, "stick hole too near the reset hole"
         assert P["tp_sensor_z"] + P["tp_sensor"][2] + P["tp_cap"][1] > P["hump_top"] + 0.5, "cap below the roof"
+    fd_, fdep, fclr = P["foot"]
+    for f in feet(side):
+        c = Point(f).buffer(fd_ / 2 + fclr)
+        assert off(inner, -P["floor_tol"] - 1.0).contains(c), f"foot at {f} off the floor"
+        assert c.distance(Point(mx, -my).buffer(od / 2)) > 1.0, f"foot at {f} on the MagSafe ring"
+        assert min(c.distance(Point(xy(x, y))) for x, y in P["screws"]) > P["csk_d"] / 2 + 1.0, f"foot at {f} on a screw"
+    assert all(Point(a).distance(Point(b)) > fd_ + 1.0 for a in feet("left") for b in feet("right")), \
+        "feet don't nest back to back"
     assert off(inner, -1).contains(off(bat, 1.2)), "battery bay outside floor"
     assert off(inner, -1.5).contains(Point(mx, -my).buffer(od / 2)), "MagSafe ring off the floor"
     for x, y in P["screws"]:
@@ -357,6 +375,7 @@ def build(side="left"):
              for x, y in P["screws"]]
     ringp = Point(mx, -my).buffer(od / 2, 64).difference(Point(mx, -my).buffer(idd / 2, 64))
     cuts.append(slab(ringp, Z_BOT - 1, Z_BOT + dep))
+    cuts += [cyl(*f, Z_BOT - 1, Z_BOT + fdep, fd_ + 2 * fclr) for f in feet(side)]
     floor -= union(cuts)
 
     if side == "right":
@@ -375,6 +394,8 @@ def proxies(side="left"):
     if side == "right":  # TrackPoint cap (size estimated)
         st = P["tp_sensor_z"] + P["tp_sensor"][2]
         misc.append(cyl(*xy(*P["tp_at"]), st + 1.0, st + P["tp_cap"][1], P["tp_cap"][0]))
+    fd_, fdep, _ = P["foot"]
+    misc += [cyl(*f, Z_BOT + fdep - 2.8, Z_BOT + fdep, fd_) for f in feet(side)]
     misc.append(reset_pin().translate((*xy(*P["reset"]), P["reset_sw"][2])))
     out = dict(pcb=pcb, caps=caps, misc=union(misc))
     return {k: v.mirror((1, 0, 0)) for k, v in out.items()} if side == "right" else out

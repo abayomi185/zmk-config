@@ -9,9 +9,10 @@ Two-piece PETG wrap case for the Corne LP (corne-chocolate v3 / Helidox), nice!n
 - `floor`: drops in from below, so the only seam is on the bottom; has the MagSafe ring recess and battery fences
 - 5 × M2×12 countersunk screws go up through the floor and PCB and thread straight into 1.8 mm pilot holes in bosses under the deck, which clamps shell, PCB and floor together. Lay the PCB into the upturned shell, then screw the floor on; go gently, it is ~2.5 mm of thread in PETG. Heads sit 1.6 mm up in wells in the floor
 - TrackPoint (right hump): the holykeebs module stacks on the nice!nano and its stick comes up through a 9.5 mm hole in the hump roof (cap + 1.5 mm, so the cap can tilt). Fit the cap after the PCB is in. The sensor has to clear the roof underside (10.8 mm above the PCB) by 0.3 mm
+- Feet: 3M SJ5376 bumpons (Ø8) in 0.6 mm recesses, 4 per half. The two halves' feet are staggered so they nest when stacked back to back
 - No power switch: use `&soft_off`, and press reset to wake. `reset_pin` is a loose printed pin in the hump's reset hole: it rests on the switch with its top 0.3 mm under the surface, and a flange stops it falling out. Print one per half, standing on the flange. Its length assumes a 4.3 mm tall switch (`reset_sw`)
 
-Heights: 14.6 mm at the keys, 23.5 mm at the hump. The PCB top sits 11.1 mm above the desk; the 6 mm battery (EEMB 603449) under the hotswap sockets sets this.
+Heights (without feet, which add 2.2 mm): 14.6 mm at the keys, 23.5 mm at the hump. The PCB top sits 11.1 mm above the desk; the 6 mm battery (EEMB 603449) under the hotswap sockets sets this.
 
 ## Build
 
